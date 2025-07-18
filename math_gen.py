@@ -3,6 +3,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Preformatted, Frame, PageTemplate
 from reportlab.lib.units import inch
+from reportlab.platypus.doctemplate import BaseDocTemplate, PageTemplate
+from reportlab.platypus.frames import Frame
 
 def generate_expression():
     operator = random.choice(['+', '-'])
@@ -25,19 +27,30 @@ def generate_expression():
             return f'{a} - (     ) = {b}'
 
 def create_pdf(filename, problems, cols=3):
-    doc = SimpleDocTemplate(filename, pagesize=letter,
-                        rightMargin=36, leftMargin=36,
-                        topMargin=36, bottomMargin=18)
+    class MultiColumnDocTemplate(BaseDocTemplate):
+        def __init__(self, filename, cols=3, **kwargs):
+            super().__init__(filename, **kwargs)
+            self.cols = cols
+            
+        def build(self, flowables, **kwargs):
+            frame_width = (self.width) / self.cols
+            frames = []
+            for i in range(self.cols):
+                left = self.leftMargin + i * frame_width
+                width = frame_width - 12
+                frame = Frame(left, self.bottomMargin, 
+                            width, self.height, 
+                            leftPadding=6, rightPadding=6)
+                frames.append(frame)
+            
+            template = PageTemplate(frames=frames)
+            self.addPageTemplates([template])
+            super().build(flowables, **kwargs)
 
-    frame_width = (doc.width + doc.leftMargin) / cols
-    frames = [
-        Frame(doc.leftMargin + i*frame_width, doc.bottomMargin,
-              frame_width - 6, doc.height, id=f'col{i}')
-        for i in range(cols)
-    ]
-
-    # Apply the same column layout to all pages
-    doc.addPageTemplates([PageTemplate(frames=frames, id='multi_col')])
+    doc = MultiColumnDocTemplate(filename, cols=cols,
+                               pagesize=letter,
+                               rightMargin=48, leftMargin=48,
+                               topMargin=36, bottomMargin=18)
 
     styles = getSampleStyleSheet()
     style = styles['Normal']
