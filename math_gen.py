@@ -1,10 +1,8 @@
 import random
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Preformatted, Frame, PageTemplate
+from reportlab.platypus import SimpleDocTemplate, Preformatted
 from reportlab.lib.units import inch
-from reportlab.platypus.doctemplate import BaseDocTemplate, PageTemplate
-from reportlab.platypus.frames import Frame
 
 def generate_expression():
     operator = random.choice(['+', '-'])
