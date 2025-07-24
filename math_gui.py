@@ -37,7 +37,7 @@ class MathProblemGenerator(QMainWindow):
         pages_layout.addWidget(QLabel('页数:'))
         self.pages_spinbox = QSpinBox()
         self.pages_spinbox.setRange(1, 50)
-        self.pages_spinbox.setValue(5)
+        self.pages_spinbox.setValue(10)
         pages_layout.addWidget(self.pages_spinbox)
         pages_layout.addStretch()
 
@@ -46,7 +46,7 @@ class MathProblemGenerator(QMainWindow):
         cols_layout.addWidget(QLabel('每页列数:'))
         self.cols_spinbox = QSpinBox()
         self.cols_spinbox.setRange(1, 5)
-        self.cols_spinbox.setValue(3)
+        self.cols_spinbox.setValue(4)
         cols_layout.addWidget(self.cols_spinbox)
         cols_layout.addStretch()
 
@@ -65,7 +65,7 @@ class MathProblemGenerator(QMainWindow):
         font_layout.addWidget(QLabel('字号:'))
         self.font_spinbox = QSpinBox()
         self.font_spinbox.setRange(12, 24)
-        self.font_spinbox.setValue(16)
+        self.font_spinbox.setValue(14)
         self.font_spinbox.valueChanged.connect(self.update_preview)
         font_layout.addWidget(self.font_spinbox)
         font_layout.addStretch()
