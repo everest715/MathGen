@@ -6,10 +6,19 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt6.QtCore import Qt
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Preformatted
+from reportlab.platypus import SimpleDocTemplate, Preformatted, BaseDocTemplate, Frame, PageTemplate
 from reportlab.lib.units import inch
 
 class MathProblemGenerator(QMainWindow):
+    """数学题目生成器主窗口类
+    
+    功能：
+    - 生成加减法填空题
+    - 支持多页、多列、自定义每列题数
+    - 可调节字号和行间距
+    - 导出为PDF格式
+    """
+    
     def __init__(self):
         super().__init__()
         self.setWindowTitle('数学题目生成器')
@@ -17,6 +26,7 @@ class MathProblemGenerator(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
+        """初始化用户界面"""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
@@ -44,10 +54,25 @@ class MathProblemGenerator(QMainWindow):
         per_col_layout = QHBoxLayout()
         per_col_layout.addWidget(QLabel('每列题目数:'))
         self.per_col_spinbox = QSpinBox()
-        self.per_col_spinbox.setRange(10, 50)
+        self.per_col_spinbox.setRange(10, 80)
         self.per_col_spinbox.setValue(25)
+        self.per_col_spinbox.valueChanged.connect(self.update_preview)
         per_col_layout.addWidget(self.per_col_spinbox)
         per_col_layout.addStretch()
+        
+        # 字号设置
+        font_layout = QHBoxLayout()
+        font_layout.addWidget(QLabel('字号:'))
+        self.font_spinbox = QSpinBox()
+        self.font_spinbox.setRange(12, 24)
+        self.font_spinbox.setValue(16)
+        self.font_spinbox.valueChanged.connect(self.update_preview)
+        font_layout.addWidget(self.font_spinbox)
+        font_layout.addStretch()
+        
+        # 预览标签
+        self.preview_label = QLabel('总题数: 0')
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 生成按钮
         self.generate_btn = QPushButton('生成PDF')
@@ -57,18 +82,35 @@ class MathProblemGenerator(QMainWindow):
         layout.addLayout(pages_layout)
         layout.addLayout(cols_layout)
         layout.addLayout(per_col_layout)
+        layout.addLayout(font_layout)
         layout.addWidget(self.generate_btn)
         layout.addStretch()
         
         central_widget.setLayout(layout)
+        
+    def update_preview(self):
+        """实时更新预览总题数"""
+        pages = self.pages_spinbox.value()
+        cols = self.cols_spinbox.value()
+        per_col = self.per_col_spinbox.value()
+        total_problems = pages * per_col * cols
+        self.preview_label.setText(f'总题数: {total_problems}')
 
     def generate_expression(self):
+        """生成单个数学表达式
+        
+        返回格式：
+        - 加法：(     ) + b = a 或 b + (     ) = a
+        - 减法：(     ) - b = a-b 或 a - (     ) = b
+        
+        确保减法结果为正数
+        """
         operator = random.choice(['+', '-'])
         a = random.randint(1, 99)
         b = random.randint(1, 99)
-        a, b = max(a, b), min(a, b)
+        a, b = max(a, b), min(a, b)  # 确保a >= b，减法结果为正
 
-        bracket_pos = random.choice([0, 1])
+        bracket_pos = random.choice([0, 1])  # 括号位置：0=左边，1=右边
 
         if bracket_pos == 0:
             if operator == "+":
@@ -81,18 +123,27 @@ class MathProblemGenerator(QMainWindow):
             else:
                 return f'{a} - (     ) = {b}'
 
-    def create_pdf(self, filename, problems, cols=3):
+    def create_pdf(self, filename, problems, cols=3, font_size=16):
+        """创建PDF文档
+        
+        参数：
+            filename: 输出文件名
+            problems: 题目列表
+            cols: 每页列数
+        """
+        # 自定义多列文档模板
         class MultiColumnDocTemplate(BaseDocTemplate):
             def __init__(self, filename, cols=3, **kwargs):
                 super().__init__(filename, **kwargs)
                 self.cols = cols
                 
             def build(self, flowables, **kwargs):
+                """构建多列布局"""
                 frame_width = (self.width) / self.cols
                 frames = []
                 for i in range(self.cols):
                     left = self.leftMargin + i * frame_width
-                    width = frame_width - 12
+                    width = frame_width - 12  # 留出间距
                     frame = Frame(left, self.bottomMargin, 
                                 width, self.height, 
                                 leftPadding=6, rightPadding=6)
@@ -102,38 +153,46 @@ class MathProblemGenerator(QMainWindow):
                 self.addPageTemplates([template])
                 super().build(flowables, **kwargs)
 
+        # 创建PDF文档
         doc = MultiColumnDocTemplate(filename, cols=cols,
                                    pagesize=letter,
                                    rightMargin=48, leftMargin=48,
                                    topMargin=36, bottomMargin=18)
 
+        # 设置样式
         styles = getSampleStyleSheet()
         style = styles['Normal']
-        style.fontSize = 16
-        style.leading = 22
+        style.fontSize = self.font_spinbox.value()
+        style.leading = style.fontSize + 6  # 行间距 = 字号 + 6
 
+        # 添加内容
         content = []
         for i, prob in enumerate(problems):
-            p = Preformatted(f"{i+1}. {prob}", style)
+            p = Preformatted(f"{prob}", style)
             content.append(p)
 
         doc.build(content)
 
     def generate_problems(self):
+        """生成题目并创建PDF"""
         pages = self.pages_spinbox.value()
         cols = self.cols_spinbox.value()
         per_col = self.per_col_spinbox.value()
+        font_size = self.font_spinbox.value()
         
         total_problems = pages * per_col * cols
         
         try:
+            # 生成所有题目
             problems = [self.generate_expression() for _ in range(total_problems)]
             
+            # 选择保存位置
             filename, _ = QFileDialog.getSaveFileName(
                 self, '保存PDF文件', '数学题目.pdf', 'PDF文件 (*.pdf)')
             
             if filename:
-                self.create_pdf(filename, problems, cols)
+                # 创建PDF
+                self.create_pdf(filename, problems, cols, font_size)
                 QMessageBox.information(
                     self, '成功', 
                     f'已生成{total_problems}道题目到\n{filename}')
@@ -142,6 +201,7 @@ class MathProblemGenerator(QMainWindow):
             QMessageBox.critical(self, '错误', f'生成失败：{str(e)}')
 
 if __name__ == '__main__':
+    # 启动应用程序
     app = QApplication(sys.argv)
     window = MathProblemGenerator()
     window.show()
