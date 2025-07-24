@@ -162,7 +162,7 @@ class MathProblemGenerator(QMainWindow):
         # 设置样式
         styles = getSampleStyleSheet()
         style = styles['Normal']
-        style.fontSize = self.font_spinbox.value()
+        style.fontSize = font_size
         style.leading = style.fontSize + 6  # 行间距 = 字号 + 6
 
         # 添加内容
