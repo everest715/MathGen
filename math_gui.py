@@ -162,10 +162,10 @@ class MathProblemGenerator(QMainWindow):
         doc = MultiColumnDocTemplate(filename, cols=cols,
                                    pagesize=letter,
                                    rightMargin=48, leftMargin=48,
-                                   topMargin=36, bottomMargin=18)
+                                   topMargin=18, bottomMargin=36)
 
         # 计算可用的列高度 (letter页面高度 - 上下边距)
-        available_height = letter[1] - 36 - 18  # topMargin + bottomMargin
+        available_height = letter[1] - 18 - 36  # topMargin + bottomMargin
 
         # 计算每道题目的最大高度，确保每列不超过指定数量
         max_line_height = available_height / per_col
