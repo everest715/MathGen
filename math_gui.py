@@ -47,6 +47,7 @@ class MathProblemGenerator(QMainWindow):
         self.cols_spinbox = QSpinBox()
         self.cols_spinbox.setRange(1, 5)
         self.cols_spinbox.setValue(4)
+        self.cols_spinbox.valueChanged.connect(self.update_preview)
         cols_layout.addWidget(self.cols_spinbox)
         cols_layout.addStretch()
 
