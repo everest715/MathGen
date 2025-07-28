@@ -131,7 +131,7 @@ class MathProblemGenerator(QMainWindow):
             num_count: 等号左边数值数量（2或3）
             has_multiply: 是否包含乘法
             has_divide: 是否包含除法
-        
+
         返回格式：
         - 加减法：(     ) + b = c 或 a - (     ) = b
         - 乘除法：遵循99乘法表限制
@@ -143,156 +143,116 @@ class MathProblemGenerator(QMainWindow):
             operators.append('*')
         if has_divide:
             operators.append('/')
-        
+
         if num_count == 2:
             # 2个数的情况
-            if has_divide and random.choice([True, False]):
+            if has_divide and '/' in operators and random.choice([True, False]):
                 # 除法且显示余数
                 divisor = random.randint(2, 9)
                 dividend = random.randint(1, 9) * divisor + random.randint(1, divisor-1)
                 quotient = dividend // divisor
                 remainder = dividend % divisor
-                
-                bracket_pos = random.choice([0, 1])
-                if bracket_pos == 0:
-                    return f'(     ) ÷ {divisor} = {quotient}...{remainder}'
-                else:
-                    return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
-            
-            elif has_multiply and '*' in operators:
+
+                bracket_pos = random.choice([0, 1, 2])
+                match bracket_pos:
+                    case 0:
+                        return f'(     ) ÷ {divisor} = {quotient}...{remainder}'
+                    case 1:
+                        return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
+                    case 2:
+                        return f'{dividend} ÷ {divisor} = (     )...(     )'
+
+            elif has_multiply and '*' in operators and random.choice([True, False]):
                 # 乘法（99乘法表）
                 a = random.randint(2, 9)
                 b = random.randint(2, 9)
                 result = a * b
-                
-                bracket_pos = random.choice([0, 1])
-                if bracket_pos == 0:
-                    return f'(     ) × {b} = {result}'
-                else:
-                    return f'{a} × (     ) = {result}'
-            
+
+                bracket_pos = random.choice([0, 1, 2])
+                match bracket_pos:
+                    case 0:
+                        return f'(     ) × {b} = {result}'
+                    case 1:
+                        return f'{a} × (     ) = {result}'
+                    case 2:
+                        return f'{a} × {b} ='
+
             else:
                 # 只有加减法，1000以内
                 operator = random.choice(['+', '-'])
                 if operator == '+':
                     a = random.randint(1, 999)
-                    b = random.randint(1, 999)
-                    result = a + b
-                    
-                    bracket_pos = random.choice([0, 1])
-                    if bracket_pos == 0:
-                        return f'(     ) + {b} = {result}'
-                    else:
+                    result = random.randint(a+1, 999)
+                    b = result - a
+
+                    bracket_pos = random.choice([0, 1, 2])
+                    match bracket_pos:
+                        case 0:
+                            return f'(     ) + {b} = {result}'
+                        case 1:
                             return f'{a} + (     ) = {result}'
+                        case 2:
+                            return f'{a} + {b} ='
                 else:
                     # 减法确保结果为正
-                    a = random.randint(100, 999)
+                    a = random.randint(2, 999)
                     b = random.randint(1, a-1)
                     result = a - b
-                    
-                    bracket_pos = random.choice([0, 1])
-                    if bracket_pos == 0:
-                        return f'(     ) - {b} = {result}'
-                    else:
-                        return f'{a} - (     ) = {b}'
-        
+
+                    bracket_pos = random.choice([0, 1, 2])
+                    match bracket_pos:
+                        case 0:
+                            return f'(     ) - {b} = {result}'
+                        case 1:
+                            return f'{a} - (     ) = {result}'
+                        case 2:
+                            return f'{a} - {b} ='
+
         else:  # num_count == 3
-            # 3个数的情况
-            if has_multiply and has_divide:
-                # 混合运算（乘除）
-                ops = ['*', '/']
-                op1, op2 = random.sample(ops, 2)
-                
-                if op1 == '*' and op2 == '/':
-                    # a * b / c
-                    b = random.randint(2, 9)
-                    c = random.randint(2, 9)
-                    a = random.randint(1, 9) * c  # 确保能整除
-                    result = (a * b) // c
-                    
-                    bracket_pos = random.choice([0, 1, 2])
-                    if bracket_pos == 0:
-                        return f'(     ) × {b} ÷ {c} = {result}'
-                    elif bracket_pos == 1:
-                        return f'{a} × (     ) ÷ {c} = {result}'
+            a,b,c = 0,0,0
+            op = random.choice(['+', '-'])  # 确保至少有一个运算符
+            match op:
+                case '+':
+                    op2 = random.choice(['×', '÷'])  # 确保至少有一个乘除法
+                    firstPos = random.choice([True, False])
+                    match op2:
+                        case '×':
+                            a = random.randint(2, 9)
+                            b = random.randint(2, 9)
+                            c = random.randint(1, 999-a*b)
+                        case '÷':
+                            a = random.randint(2, 9)
+                            b = random.randint(2, 9)
+                            a = a*b
+                            c = random.randint(1, 999-a)
+
+                    if firstPos:
+                        return f'{a} {op2} {b} {op} {c} ='
                     else:
-                        return f'{a} × {b} ÷ (     ) = {result}'
-                
-                else:  # / then *
-                    # a / b * c
-                    b = random.randint(2, 9)
-                    a = random.randint(1, 9) * b  # 确保能整除
-                    c = random.randint(2, 9)
-                    result = (a // b) * c
-                    
-                    bracket_pos = random.choice([0, 1, 2])
-                    if bracket_pos == 0:
-                        return f'(     ) ÷ {b} × {c} = {result}'
-                    elif bracket_pos == 1:
-                        return f'{a} ÷ (     ) × {c} = {result}'
+                        return f'{c} {op} {a} {op2} {b} ='
+                case '-':
+                    op2 = random.choice(['×', '÷'])  # 确保至少有一个乘除法
+                    firstPos = random.choice([True, False])
+                    match op2:
+                        case '×':
+                            a = random.randint(2, 9)
+                            b = random.randint(2, 9)
+                            if firstPos:
+                                c = random.randint(1, a*b-1)
+                            else:
+                                c = random.randint(a*b+1, 999)
+                        case '÷':
+                            a = random.randint(2, 9)
+                            b = random.randint(2, 9)
+                            a = a*b
+                            if firstPos:
+                                c = random.randint(1, a-1)
+                            else:
+                                c = random.randint(a+1, 999)
+                    if firstPos:
+                        return f'{a} {op2} {b} {op} {c} ='
                     else:
-                        return f'{a} ÷ {b} × (     ) = {result}'
-            
-            elif has_multiply:
-                # 只有乘法
-                a = random.randint(2, 9)
-                b = random.randint(2, 9)
-                c = random.randint(2, 9)
-                result = a * b * c
-                
-                bracket_pos = random.choice([0, 1, 2])
-                if bracket_pos == 0:
-                    return f'(     ) × {b} × {c} = {result}'
-                elif bracket_pos == 1:
-                    return f'{a} × (     ) × {c} = {result}'
-                else:
-                    return f'{a} × {b} × (     ) = {result}'
-            
-            elif has_divide:
-                # 只有除法（确保能整除）
-                b = random.randint(2, 9)
-                c = random.randint(2, 9)
-                a = random.randint(1, 9) * b * c  # 确保能整除
-                result = (a // b) // c
-                
-                bracket_pos = random.choice([0, 1, 2])
-                if bracket_pos == 0:
-                    return f'(     ) ÷ {b} ÷ {c} = {result}'
-                elif bracket_pos == 1:
-                    return f'{a} ÷ (     ) ÷ {c} = {result}'
-                else:
-                    return f'{a} ÷ {b} ÷ (     ) = {result}'
-            
-            else:
-                # 只有加减法
-                operator1 = random.choice(['+', '-'])
-                operator2 = random.choice(['+', '-'])
-                
-                a = random.randint(100, 999)
-                if operator1 == '+' and operator2 == '+':
-                    b = random.randint(1, 999-a)
-                    c = random.randint(1, 999-a-b)
-                    result = a + b + c
-                elif operator1 == '+' and operator2 == '-':
-                    b = random.randint(1, 999-a)
-                    c = random.randint(1, a+b-1)
-                    result = a + b - c
-                elif operator1 == '-' and operator2 == '+':
-                    b = random.randint(1, a-1)
-                    c = random.randint(1, 999-(a-b))
-                    result = a - b + c
-                else:  # - -
-                    b = random.randint(1, a-1)
-                    c = random.randint(1, a-b-1)
-                    result = a - b - c
-                
-                bracket_pos = random.choice([0, 1, 2])
-                if bracket_pos == 0:
-                    return f'(     ) {operator1} {b} {operator2} {c} = {result}'
-                elif bracket_pos == 1:
-                    return f'{a} {operator1} (     ) {operator2} {c} = {result}'
-                else:
-                    return f'{a} {operator1} {b} {operator2} (     ) = {result}'
+                        return f'{c} {op} {a} {op2} {b} ='
 
     def create_pdf(self, filename, problems, cols=3, font_size=16, per_col=25):
         """创建PDF文档
@@ -358,7 +318,7 @@ class MathProblemGenerator(QMainWindow):
         cols = self.cols_spinbox.value()
         per_col = self.per_col_spinbox.value()
         font_size = self.font_spinbox.value()
-        
+
         # 获取运算设置
         num_count = 2 if self.num_count_combo.currentText() == '2个数字' else 3
         has_multiply = self.multiply_check.isChecked()
@@ -368,7 +328,7 @@ class MathProblemGenerator(QMainWindow):
 
         try:
             # 生成所有题目
-            problems = [self.generate_expression(num_count, has_multiply, has_divide) 
+            problems = [self.generate_expression(num_count, has_multiply, has_divide)
                        for _ in range(total_problems)]
 
             # 选择保存位置
