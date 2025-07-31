@@ -161,7 +161,7 @@ class MathProblemGenerator(QMainWindow):
                     case 1:
                         return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
                     case 2:
-                        return f'{dividend} ÷ {divisor} = (     )...(     )'
+                        return f'{dividend} ÷ {divisor} ='
 
             elif has_multiply and '*' in operators and random.choice([True, False]):
                 # 乘法（99乘法表）
@@ -247,7 +247,7 @@ class MathProblemGenerator(QMainWindow):
                             b = random.randint(2, 9)
                             a = a*b
                             if firstPos:
-                                c = random.randint(1, a-1)
+                                c = random.randint(1, a/b-1)
                             else:
                                 c = random.randint(a+1, 999)
                     if firstPos:
