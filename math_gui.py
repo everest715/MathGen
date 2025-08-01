@@ -251,18 +251,18 @@ class MathProblemGenerator(QMainWindow):
         # 随机选择运算类型
         operation_choices = []
         if has_divide:
-            operation_choices.append('divide')
+            operation_choices.append('÷')
         if has_multiply:
-            operation_choices.append('multiply')
-        operation_choices.extend(['add', 'subtract'])  # 总是包含加减法
+            operation_choices.append('x')
+        operation_choices.extend(['+', '-'])  # 总是包含加减法
         
         operation = random.choice(operation_choices)
         
-        if operation == 'divide':
+        if operation == '÷':
             return self._generate_division_expression()
-        elif operation == 'multiply':
+        elif operation == 'x':
             return self._generate_multiplication_expression()
-        elif operation == 'add':
+        elif operation == '+':
             return self._generate_addition_expression()
         else:  # subtract
             return self._generate_subtraction_expression()
@@ -285,8 +285,8 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
-        a = random.randint(Constants.MIN_ADDITION_VALUE, Constants.MAX_ADDITION_VALUE)
-        result = random.randint(a+1, Constants.MAX_ADDITION_VALUE)
+        a = random.randint(Constants.MIN_ADDITION_VALUE, Constants.MAX_ADDITION_VALUE - 1)
+        result = random.randint(a + 1, Constants.MAX_ADDITION_VALUE)
         b = result - a
         return self._generate_bracket_expression(a, '+', b, result)
 
@@ -379,8 +379,7 @@ class MathProblemGenerator(QMainWindow):
             # 第二个是乘除法，第一个是加减法
             if op2 == 'x':
                 # 先生成乘法部分
-                b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                b, c = self._generate_multiplication_pair()
                 multiplication_result = b * c
                 
                 # 基于乘法结果生成加减法
@@ -392,8 +391,7 @@ class MathProblemGenerator(QMainWindow):
             
             else:  # op2 == '÷'
                 # 先生成除法部分
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                c, quotient = self._generate_multiplication_pair()
                 b = c * quotient  # 被除数
                 
                 # 基于除法结果生成加减法
