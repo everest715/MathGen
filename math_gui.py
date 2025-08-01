@@ -283,10 +283,11 @@ class MathProblemGenerator(QMainWindow):
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             temp_result = a * b
         elif op1 == '÷':
-            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-            quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-            a = b * quotient  # 确保整除
-            temp_result = a // b
+            # 先生成两个2到9之间的数，用它们的乘积作为被除数，其中一个数作为除数
+            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
+            quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 商
+            a = b * quotient  # 被除数 = 除数 × 商
+            temp_result = quotient  # 第一步运算的结果就是商
         elif op1 == '+':
             a = random.randint(10, 200)
             b = random.randint(1, 50)
@@ -333,40 +334,43 @@ class MathProblemGenerator(QMainWindow):
                 else:
                     c = Constants.MIN_MULTIPLICATION_FACTOR
         elif op2 == '÷':
-            # 选择一个能整除temp_result的数作为c
-            divisors = [i for i in range(2, min(10, temp_result + 1)) if temp_result % i == 0]
-            if divisors:
-                c = random.choice(divisors)
-            else:
-                # 如果没有合适的除数，重新生成一个能被整除的temp_result
-                c = random.randint(2, 9)
-                temp_result = c * random.randint(2, 20)
-                # 重新计算a和b
-                if op1 == '×':
-                    # 重新生成乘法组合，找到两个因子使得它们的乘积等于temp_result
-                    # 寻找temp_result的因子分解
-                    factors = []
-                    for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1):
-                        if temp_result % i == 0:
-                            j = temp_result // i
-                            if Constants.MIN_MULTIPLICATION_FACTOR <= j <= Constants.MAX_MULTIPLICATION_FACTOR:
-                                factors.append((i, j))
-                    if factors:
-                        a, b = random.choice(factors)
-                    else:
-                        # 如果找不到合适的因子，重新生成temp_result
-                        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                        temp_result = a * b
-                elif op1 == '÷':
-                    b = random.randint(2, 9)
-                    a = temp_result * b
-                elif op1 == '+':
-                    b = random.randint(1, temp_result - 1)
-                    a = temp_result - b
-                else:  # op1 == '-'
-                    b = random.randint(1, 50)
-                    a = temp_result + b
+            # 先生成两个2到9之间的数，用它们的乘积作为被除数（temp_result），其中一个数作为除数
+            c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
+            quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 商
+            temp_result = c * quotient  # 被除数 = 除数 × 商
+            
+            # 重新计算a和b，使得第一步运算的结果等于temp_result
+            if op1 == '×':
+                # 寻找temp_result的因子分解
+                factors = []
+                for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1):
+                    if temp_result % i == 0:
+                        j = temp_result // i
+                        if Constants.MIN_MULTIPLICATION_FACTOR <= j <= Constants.MAX_MULTIPLICATION_FACTOR:
+                            factors.append((i, j))
+                if factors:
+                    a, b = random.choice(factors)
+                else:
+                    # 如果找不到合适的因子，重新生成简单的乘法
+                    a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                    b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                    temp_result = a * b
+                    # 重新生成除法
+                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                    quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                    temp_result = c * quotient
+            elif op1 == '÷':
+                # 第一步也是除法，生成简单的除法组合
+                b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                a = temp_result * b
+            elif op1 == '+':
+                # 第一步是加法，确保a + b = temp_result
+                b = random.randint(1, min(50, temp_result - 1)) if temp_result > 1 else 1
+                a = temp_result - b
+            else:  # op1 == '-'
+                # 第一步是减法，确保a - b = temp_result
+                b = random.randint(1, 50)
+                a = temp_result + b
         elif op2 == '+':
             c = random.randint(1, 99)
         else:  # op2 == '-'
