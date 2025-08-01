@@ -320,40 +320,8 @@ class MathProblemGenerator(QMainWindow):
         """生成包含乘除法的混合运算表达式"""
         # 新的实现逻辑：当op1和op2中有乘除时，先实现乘除的算式，再完善另一个算式
         
-        # 第一步：确定哪个运算符是乘除法，优先处理乘除法
-        if op1 in ['x', '÷'] and op2 in ['x', '÷']:
-            # 两个都是乘除法的情况
-            if op1 == 'x':
-                # 第一个是乘法
-                a, b = self._generate_multiplication_pair()
-                temp_result = a * b
-            else:  # op1 == '÷'
-                # 第一个是除法
-                a, b, temp_result = self._generate_division_pair()
-            
-            if op2 == 'x':
-                # 第二个是乘法，确保乘法因子在2-9范围内
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                # 根据temp_result调整，确保最终结果合理
-                if temp_result * c > Constants.MAX_RESULT:
-                    max_c = Constants.MAX_RESULT // temp_result
-                    if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
-                        c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
-                    else:
-                        c = Constants.MIN_MULTIPLICATION_FACTOR
-            else:  # op2 == '÷'
-                # 第二个是除法
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                # 确保temp_result能被c整除
-                if temp_result % c != 0:
-                    # 重新生成c，使其能整除temp_result
-                    divisors = [i for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) if temp_result % i == 0]
-                    if divisors:
-                        c = random.choice(divisors)
-                    else:
-                        c = Constants.MIN_MULTIPLICATION_FACTOR
-        
-        elif op1 in ['x', '÷']:
+        # 确定哪个运算符是乘除法，优先处理乘除法
+        if op1 in ['x', '÷']:
             # 第一个是乘除法，第二个是加减法
             if op1 == 'x':
                 a, b = self._generate_multiplication_pair()
