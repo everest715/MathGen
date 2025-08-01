@@ -325,7 +325,7 @@ class MathProblemGenerator(QMainWindow):
             # 确保最终结果为正数
             c = random.randint(1, min(99, temp_result - 1)) if temp_result > 1 else 1
         
-        return f'{a} {op1} {b} {op2} {c} = ______'
+        return f'{a} {op1} {b} {op2} {c} ='
 
     def _generate_addition_subtraction_expression(self, op1, op2):
         """生成纯加减法表达式"""
@@ -353,7 +353,7 @@ class MathProblemGenerator(QMainWindow):
             min_a = b + c + 1  # 确保 a - b - c > 0
             a = random.randint(min_a, min_a + 200)
         
-        return f'{a} {op1} {b} {op2} {c} = ______'
+        return f'{a} {op1} {b} {op2} {c} ='
 
     def create_pdf(self, filename, problems, cols=3, font_size=16, per_col=25):
         """创建PDF文档
