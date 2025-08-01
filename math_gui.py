@@ -331,10 +331,10 @@ class MathProblemGenerator(QMainWindow):
             
             # 基于乘除法结果生成加减法
             if op2 == '+':
-                c = random.randint(Constants.MIN_RESULT, 50)
+                c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - temp_result)
             else:  # op2 == '-'
                 # 确保最终结果为正数
-                c = random.randint(Constants.MIN_RESULT, min(50, temp_result - 1)) if temp_result > 1 else Constants.MIN_RESULT
+                c = random.randint(Constants.MIN_RESULT, temp_result - 1)
         
         elif op2 in ['x', '÷']:
             # 第二个是乘除法，第一个是加减法
@@ -345,10 +345,10 @@ class MathProblemGenerator(QMainWindow):
                 
                 # 基于乘法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(10, 200)
+                    a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - multiplication_result)
                 else:  # op1 == '-'
                     # 确保a - (b * c) > 0
-                    a = random.randint(multiplication_result + 1, multiplication_result + 200)
+                    a = random.randint(multiplication_result + 1, Constants.MAX_RESULT)
             
             else:  # op2 == '÷'
                 # 先生成除法部分
@@ -357,10 +357,10 @@ class MathProblemGenerator(QMainWindow):
                 
                 # 基于除法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(10, 200)
+                    a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - quotient)
                 else:  # op1 == '-'
                     # 确保a - b > 0
-                    a = random.randint(b + 1, b + 200)
+                    a = random.randint(b + 1, Constants.MAX_RESULT)
         
         else:
             # 这种情况不应该出现在混合运算中，因为至少要有一个乘除法
@@ -373,26 +373,25 @@ class MathProblemGenerator(QMainWindow):
         # 生成合理的数值组合，确保每一步和最终结果都为正数
         if op1 == '+' and op2 == '+':
             # a + b + c
-            a = random.randint(10, 200)
-            b = random.randint(Constants.MIN_RESULT, 50)
-            c = random.randint(Constants.MIN_RESULT, 50)
+            a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT)
+            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a)
+            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a - b)
         elif op1 == '+' and op2 == '-':
             # a + b - c，确保 a + b > c
-            a = random.randint(10, 200)
-            b = random.randint(Constants.MIN_RESULT, 50)
+            a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT)
+            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a)
             temp_sum = a + b
-            c = random.randint(Constants.MIN_RESULT, min(50, temp_sum - 1)) if temp_sum > 1 else Constants.MIN_RESULT
+            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - temp_sum - 1)
         elif op1 == '-' and op2 == '+':
             # a - b + c，确保 a > b
-            b = random.randint(Constants.MIN_RESULT, 50)
-            c = random.randint(Constants.MIN_RESULT, 50)
-            a = random.randint(b + 1, b + 200)  # 确保 a > b
+            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - 1)
+            a = random.randint(b + 1, Constants.MAX_RESULT)  # 确保 a > b
+            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a + b)
         else:  # op1 == '-' and op2 == '-'
             # a - b - c，确保 a > b + c
-            b = random.randint(Constants.MIN_RESULT, 50)
-            c = random.randint(Constants.MIN_RESULT, 50)
-            min_a = b + c + 1  # 确保 a - b - c > 0
-            a = random.randint(min_a, min_a + 200)
+            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT)
+            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - b)
+            a = random.randint(b + c + 1, Constants.MAX_RESULT)
         
         return f'{a} {op1} {b} {op2} {c} ='
 
