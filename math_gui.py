@@ -325,96 +325,87 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        # 根据运算符类型生成合适的数值，确保每一步都不出现负数且乘法结果在99以内
-        if op1 == 'x':
-            # 生成乘法因子，2到9之间的数相乘必然不超过99
-            a, b = self._generate_multiplication_pair()
-            temp_result = a * b
-        elif op1 == '÷':
-            # 先生成两个2到9之间的数，用它们的乘积作为被除数，其中一个数作为除数
-            a, b, temp_result = self._generate_division_pair()
-        elif op1 == '+':
-            a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
-            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-            temp_result = a + b
-        else:  # op1 == '-'
-            # 先生成减数和差值，再计算被减数，避免负数
-            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-            temp_result = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_TEMP_RESULT)
-            a = temp_result + b  # 确保 a - b = temp_result > 0
+        # 新的实现逻辑：当op1和op2中有乘除时，先实现乘除的算式，再完善另一个算式
         
-        # 生成第三个数，确保最终结果为正数且乘法结果在99以内
-        if op2 == 'x':
-            if op1 == '-':
-                # 对于 a - b x c 的形式，确保 b 和 c 都在2-9范围内，且 a > b x c
-                b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        # 第一步：确定哪个运算符是乘除法，优先处理乘除法
+        if op1 in ['x', '÷'] and op2 in ['x', '÷']:
+            # 两个都是乘除法的情况
+            if op1 == 'x':
+                # 第一个是乘法
+                a, b = self._generate_multiplication_pair()
+                temp_result = a * b
+            else:  # op1 == '÷'
+                # 第一个是除法
+                a, b, temp_result = self._generate_division_pair()
+            
+            if op2 == 'x':
+                # 第二个是乘法，确保乘法因子在2-9范围内
                 c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                # 确保 a 足够大，使得 a - b x c > 0
-                min_a = b * c + 1  # 至少比乘积大1
-                max_a = min(Constants.MAX_LARGE_NUMBER, b * c + Constants.MAX_FINAL_RESULT)  # 不要太大
-                if min_a <= max_a:
-                    a = random.randint(min_a, max_a)
-                else:
-                    # 如果范围不合理，重新生成较小的b和c
-                    b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, min(Constants.MAX_MULTIPLICATION_FACTOR, 5))
-                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, min(Constants.MAX_MULTIPLICATION_FACTOR, 5))
-                    a = random.randint(b * c + 1, b * c + Constants.MAX_FINAL_RESULT)
-                temp_result = a - b  # 重新计算temp_result
-            else:
-                # 对于其他情况（op1是+、x、÷），确保第二个乘法因子在2-9范围内
-                # 同时确保乘法结果不超过99
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                # 如果temp_result * c会超过99，需要调整
+                # 根据temp_result调整，确保最终结果合理
                 if temp_result * c > Constants.MAX_MULTIPLICATION_RESULT:
-                    # 重新生成一个较小的c
-                    max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_RESULT // temp_result) if temp_result > 0 else Constants.MAX_MULTIPLICATION_FACTOR
+                    max_c = Constants.MAX_MULTIPLICATION_RESULT // temp_result
                     if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
                         c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
                     else:
                         c = Constants.MIN_MULTIPLICATION_FACTOR
-        elif op2 == '÷':
-            # 先生成两个2到9之间的数,用它们的乘积作为被除数(temp_result),其中一个数作为除数
-            c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
-            quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 商
-            temp_result = c * quotient  # 被除数 = 除数 x 商
-            
-            # 重新计算a和b，使得第一步运算的结果等于temp_result
+            else:  # op2 == '÷'
+                # 第二个是除法
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                # 确保temp_result能被c整除
+                if temp_result % c != 0:
+                    # 重新生成c，使其能整除temp_result
+                    divisors = [i for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) if temp_result % i == 0]
+                    if divisors:
+                        c = random.choice(divisors)
+                    else:
+                        c = Constants.MIN_MULTIPLICATION_FACTOR
+        
+        elif op1 in ['x', '÷']:
+            # 第一个是乘除法，第二个是加减法
             if op1 == 'x':
-                # 寻找temp_result的因子分解
-                factors = []
-                for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1):
-                    if temp_result % i == 0:
-                        j = temp_result // i
-                        if Constants.MIN_MULTIPLICATION_FACTOR <= j <= Constants.MAX_MULTIPLICATION_FACTOR:
-                            factors.append((i, j))
-                if factors:
-                    a, b = random.choice(factors)
-                else:
-                    # 如果找不到合适的因子，重新生成简单的乘法
-                    a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                    b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                    temp_result = a * b
-                    # 重新生成除法
-                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                    quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                    temp_result = c * quotient
-            elif op1 == '÷':
-                # 第一步也是除法，生成简单的除法组合
+                a, b = self._generate_multiplication_pair()
+                temp_result = a * b
+            else:  # op1 == '÷'
+                a, b, temp_result = self._generate_division_pair()
+            
+            # 基于乘除法结果生成加减法
+            if op2 == '+':
+                c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            else:  # op2 == '-'
+                # 确保最终结果为正数
+                c = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_SMALL_NUMBER, temp_result - 1)) if temp_result > 1 else Constants.MIN_SMALL_NUMBER
+        
+        elif op2 in ['x', '÷']:
+            # 第二个是乘除法，第一个是加减法
+            if op2 == 'x':
+                # 先生成乘法部分
                 b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                a = temp_result * b
-            elif op1 == '+':
-                # 第一步是加法，确保a + b = temp_result
-                b = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_SMALL_NUMBER, temp_result - 1)) if temp_result > 1 else Constants.MIN_SMALL_NUMBER
-                a = temp_result - b
-            else:  # op1 == '-'
-                # 第一步是减法，确保a - b = temp_result
-                b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-                a = temp_result + b
-        elif op2 == '+':
-            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_MULTIPLICATION_RESULT)
-        else:  # op2 == '-'
-            # 确保最终结果为正数
-            c = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_MULTIPLICATION_RESULT, temp_result - 1)) if temp_result > 1 else Constants.MIN_SMALL_NUMBER
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                multiplication_result = b * c
+                
+                # 基于乘法结果生成加减法
+                if op1 == '+':
+                    a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+                else:  # op1 == '-'
+                    # 确保a - (b * c) > 0
+                    a = random.randint(multiplication_result + 1, multiplication_result + Constants.MAX_LARGE_NUMBER)
+            
+            else:  # op2 == '÷'
+                # 先生成除法部分
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                b = c * quotient  # 被除数
+                
+                # 基于除法结果生成加减法
+                if op1 == '+':
+                    a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+                else:  # op1 == '-'
+                    # 确保a - b > 0
+                    a = random.randint(b + 1, b + Constants.MAX_LARGE_NUMBER)
+        
+        else:
+            # 这种情况不应该出现在混合运算中，因为至少要有一个乘除法
+            raise ValueError("混合运算表达式必须包含至少一个乘除法运算符")
         
         return f'{a} {op1} {b} {op2} {c} ='
 
