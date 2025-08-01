@@ -274,51 +274,86 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        # 根据运算符类型生成合适的数值
+        # 根据运算符类型生成合适的数值，确保每一步都不出现负数
         if op1 == '×':
             a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            temp_result = a * b
         elif op1 == '÷':
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             a = b * quotient  # 确保整除
-        else:  # op1 是 + 或 -
+            temp_result = a // b
+        elif op1 == '+':
             a = random.randint(10, 200)
             b = random.randint(1, 50)
+            temp_result = a + b
+        else:  # op1 == '-'
+            # 确保减法结果为正数
+            b = random.randint(1, 50)
+            temp_result = random.randint(1, 100)
+            a = temp_result + b  # 确保 a - b = temp_result > 0
         
-        # 生成第三个数
+        # 生成第三个数，确保最终结果为正数
         if op2 == '×':
             c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
         elif op2 == '÷':
-            # 如果第二个运算是除法，需要确保前面的结果能被c整除
-            if op1 == '×':
-                temp_result = a * b
-            elif op1 == '÷':
-                temp_result = a // b
-            elif op1 == '+':
-                temp_result = a + b
-            else:  # op1 == '-'
-                temp_result = a - b
-            
             # 选择一个能整除temp_result的数作为c
-            divisors = [i for i in range(2, 10) if temp_result % i == 0]
+            divisors = [i for i in range(2, min(10, temp_result + 1)) if temp_result % i == 0]
             if divisors:
                 c = random.choice(divisors)
             else:
+                # 如果没有合适的除数，重新生成一个能被整除的temp_result
                 c = random.randint(2, 9)
-        else:  # op2 是 + 或 -
+                temp_result = c * random.randint(2, 20)
+                # 重新计算a和b
+                if op1 == '×':
+                    a = random.randint(2, 9)
+                    b = temp_result // a
+                elif op1 == '÷':
+                    b = random.randint(2, 9)
+                    a = temp_result * b
+                elif op1 == '+':
+                    b = random.randint(1, temp_result - 1)
+                    a = temp_result - b
+                else:  # op1 == '-'
+                    b = random.randint(1, 50)
+                    a = temp_result + b
+        elif op2 == '+':
             c = random.randint(1, 99)
+        else:  # op2 == '-'
+            # 确保最终结果为正数
+            c = random.randint(1, min(99, temp_result - 1)) if temp_result > 1 else 1
         
-        return f'{a} {op1} {b} {op2} {c} = (     )'
+        return f'{a} {op1} {b} {op2} {c} = ______'
 
     def _generate_addition_subtraction_expression(self, op1, op2):
         """生成纯加减法表达式"""
-        # 生成合理的数值组合，确保结果为正
-        a = random.randint(10, 200)
-        b = random.randint(1, 50)
-        c = random.randint(1, 50)
+        # 生成合理的数值组合，确保每一步和最终结果都为正数
+        if op1 == '+' and op2 == '+':
+            # a + b + c
+            a = random.randint(10, 200)
+            b = random.randint(1, 50)
+            c = random.randint(1, 50)
+        elif op1 == '+' and op2 == '-':
+            # a + b - c，确保 a + b > c
+            a = random.randint(10, 200)
+            b = random.randint(1, 50)
+            temp_sum = a + b
+            c = random.randint(1, min(50, temp_sum - 1)) if temp_sum > 1 else 1
+        elif op1 == '-' and op2 == '+':
+            # a - b + c，确保 a > b
+            b = random.randint(1, 50)
+            c = random.randint(1, 50)
+            a = random.randint(b + 1, b + 200)  # 确保 a > b
+        else:  # op1 == '-' and op2 == '-'
+            # a - b - c，确保 a > b + c
+            b = random.randint(1, 50)
+            c = random.randint(1, 50)
+            min_a = b + c + 1  # 确保 a - b - c > 0
+            a = random.randint(min_a, min_a + 200)
         
-        return f'{a} {op1} {b} {op2} {c} = (     )'
+        return f'{a} {op1} {b} {op2} {c} = ______'
 
     def create_pdf(self, filename, problems, cols=3, font_size=16, per_col=25):
         """创建PDF文档
