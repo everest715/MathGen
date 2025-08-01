@@ -11,20 +11,13 @@ from reportlab.lib.units import inch
 
 # 常量定义
 class Constants:
-    # 数值范围
+    # 计算结果的最大最小值
+    MAX_RESULT = 999
+    MIN_RESULT = 1
+    
+    # 乘数的最大最小值（除法中计算除数时也使用这个定义）
     MIN_MULTIPLICATION_FACTOR = 2
     MAX_MULTIPLICATION_FACTOR = 9
-    MAX_ADDITION_VALUE = 999
-    MIN_ADDITION_VALUE = 1
-    
-    # 三个数字运算的数值范围
-    MIN_LARGE_NUMBER = 10
-    MAX_LARGE_NUMBER = 200
-    MIN_SMALL_NUMBER = 1
-    MAX_SMALL_NUMBER = 50
-    MAX_TEMP_RESULT = 100
-    MAX_FINAL_RESULT = 50
-    MAX_MULTIPLICATION_RESULT = 99
     
     # UI配置
     DEFAULT_PAGES = 10
@@ -285,15 +278,15 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
-        a = random.randint(Constants.MIN_ADDITION_VALUE, Constants.MAX_ADDITION_VALUE - 1)
-        result = random.randint(a + 1, Constants.MAX_ADDITION_VALUE)
+        a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - 1)
+        result = random.randint(a + 1, Constants.MAX_RESULT)
         b = result - a
         return self._generate_bracket_expression(a, '+', b, result)
 
     def _generate_subtraction_expression(self):
         """生成减法表达式(确保结果为正)"""
-        a = random.randint(2, Constants.MAX_ADDITION_VALUE)
-        b = random.randint(Constants.MIN_ADDITION_VALUE, a-1)
+        a = random.randint(2, Constants.MAX_RESULT)
+        b = random.randint(Constants.MIN_RESULT, a-1)
         result = a - b
         return self._generate_bracket_expression(a, '-', b, result)
 
@@ -342,8 +335,8 @@ class MathProblemGenerator(QMainWindow):
                 # 第二个是乘法，确保乘法因子在2-9范围内
                 c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
                 # 根据temp_result调整，确保最终结果合理
-                if temp_result * c > Constants.MAX_MULTIPLICATION_RESULT:
-                    max_c = Constants.MAX_MULTIPLICATION_RESULT // temp_result
+                if temp_result * c > Constants.MAX_RESULT:
+                    max_c = Constants.MAX_RESULT // temp_result
                     if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
                         c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
                     else:
@@ -370,10 +363,10 @@ class MathProblemGenerator(QMainWindow):
             
             # 基于乘除法结果生成加减法
             if op2 == '+':
-                c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+                c = random.randint(Constants.MIN_RESULT, 50)
             else:  # op2 == '-'
                 # 确保最终结果为正数
-                c = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_SMALL_NUMBER, temp_result - 1)) if temp_result > 1 else Constants.MIN_SMALL_NUMBER
+                c = random.randint(Constants.MIN_RESULT, min(50, temp_result - 1)) if temp_result > 1 else Constants.MIN_RESULT
         
         elif op2 in ['x', '÷']:
             # 第二个是乘除法，第一个是加减法
@@ -384,10 +377,10 @@ class MathProblemGenerator(QMainWindow):
                 
                 # 基于乘法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+                    a = random.randint(10, 200)
                 else:  # op1 == '-'
                     # 确保a - (b * c) > 0
-                    a = random.randint(multiplication_result + 1, multiplication_result + Constants.MAX_LARGE_NUMBER)
+                    a = random.randint(multiplication_result + 1, multiplication_result + 200)
             
             else:  # op2 == '÷'
                 # 先生成除法部分
@@ -396,10 +389,10 @@ class MathProblemGenerator(QMainWindow):
                 
                 # 基于除法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+                    a = random.randint(10, 200)
                 else:  # op1 == '-'
                     # 确保a - b > 0
-                    a = random.randint(b + 1, b + Constants.MAX_LARGE_NUMBER)
+                    a = random.randint(b + 1, b + 200)
         
         else:
             # 这种情况不应该出现在混合运算中，因为至少要有一个乘除法
@@ -412,26 +405,26 @@ class MathProblemGenerator(QMainWindow):
         # 生成合理的数值组合，确保每一步和最终结果都为正数
         if op1 == '+' and op2 == '+':
             # a + b + c
-            a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
-            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            a = random.randint(10, 200)
+            b = random.randint(Constants.MIN_RESULT, 50)
+            c = random.randint(Constants.MIN_RESULT, 50)
         elif op1 == '+' and op2 == '-':
             # a + b - c，确保 a + b > c
-            a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
-            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            a = random.randint(10, 200)
+            b = random.randint(Constants.MIN_RESULT, 50)
             temp_sum = a + b
-            c = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_SMALL_NUMBER, temp_sum - 1)) if temp_sum > 1 else Constants.MIN_SMALL_NUMBER
+            c = random.randint(Constants.MIN_RESULT, min(50, temp_sum - 1)) if temp_sum > 1 else Constants.MIN_RESULT
         elif op1 == '-' and op2 == '+':
             # a - b + c，确保 a > b
-            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-            a = random.randint(b + 1, b + Constants.MAX_LARGE_NUMBER)  # 确保 a > b
+            b = random.randint(Constants.MIN_RESULT, 50)
+            c = random.randint(Constants.MIN_RESULT, 50)
+            a = random.randint(b + 1, b + 200)  # 确保 a > b
         else:  # op1 == '-' and op2 == '-'
             # a - b - c，确保 a > b + c
-            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
-            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            b = random.randint(Constants.MIN_RESULT, 50)
+            c = random.randint(Constants.MIN_RESULT, 50)
             min_a = b + c + 1  # 确保 a - b - c > 0
-            a = random.randint(min_a, min_a + Constants.MAX_LARGE_NUMBER)
+            a = random.randint(min_a, min_a + 200)
         
         return f'{a} {op1} {b} {op2} {c} ='
 
