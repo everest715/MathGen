@@ -276,10 +276,14 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        # 根据运算符类型生成合适的数值，确保每一步都不出现负数
+        # 根据运算符类型生成合适的数值，确保每一步都不出现负数且乘法结果在99以内
         if op1 == '×':
             a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            # 确保乘法结果不超过99
+            while a * b > 99:
+                a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             temp_result = a * b
         elif op1 == '÷':
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
@@ -296,9 +300,20 @@ class MathProblemGenerator(QMainWindow):
             temp_result = random.randint(1, 100)
             a = temp_result + b  # 确保 a - b = temp_result > 0
         
-        # 生成第三个数，确保最终结果为正数
+        # 生成第三个数，确保最终结果为正数且乘法结果在99以内
         if op2 == '×':
-            c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            # 确保第二个乘法运算结果不超过99，且最终结果为正数
+            if op1 == '-':
+                # 对于减法后乘法的情况，需要确保temp_result * c不会导致负的最终结果
+                # 由于是a - b × c的形式，需要确保a > b × c
+                max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, 99 // b) if b > 0 else Constants.MAX_MULTIPLICATION_FACTOR
+                max_c = min(max_c, a // b) if b > 0 else max_c  # 确保a > b × c
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max(Constants.MIN_MULTIPLICATION_FACTOR, max_c))
+            else:
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                # 确保乘法结果不超过99
+                while temp_result * c > 99:
+                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
         elif op2 == '÷':
             # 选择一个能整除temp_result的数作为c
             divisors = [i for i in range(2, min(10, temp_result + 1)) if temp_result % i == 0]
@@ -312,6 +327,10 @@ class MathProblemGenerator(QMainWindow):
                 if op1 == '×':
                     a = random.randint(2, 9)
                     b = temp_result // a
+                    # 确保乘法结果不超过99
+                    while a * b > 99:
+                        a = random.randint(2, 9)
+                        b = temp_result // a if a > 0 else temp_result
                 elif op1 == '÷':
                     b = random.randint(2, 9)
                     a = temp_result * b
