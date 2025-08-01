@@ -9,6 +9,28 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Preformatted, BaseDocTemplate, Frame, PageTemplate
 from reportlab.lib.units import inch
 
+# 常量定义
+class Constants:
+    # 数值范围
+    MIN_MULTIPLICATION_FACTOR = 2
+    MAX_MULTIPLICATION_FACTOR = 9
+    MAX_ADDITION_VALUE = 999
+    MIN_ADDITION_VALUE = 1
+    
+    # UI配置
+    DEFAULT_PAGES = 10
+    DEFAULT_COLS = 3
+    DEFAULT_PER_COL = 25
+    DEFAULT_FONT_SIZE = 16
+    
+    # 范围限制
+    MAX_PAGES = 100
+    MAX_COLS = 5
+    MIN_PER_COL = 5
+    MAX_PER_COL = 50
+    MIN_FONT_SIZE = 12
+    MAX_FONT_SIZE = 24
+
 class MathProblemGenerator(QMainWindow):
     """数学题目生成器主窗口类
 
@@ -29,48 +51,70 @@ class MathProblemGenerator(QMainWindow):
         """初始化用户界面"""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-
         layout = QVBoxLayout()
 
+        # 创建各种控件
+        self._create_basic_controls(layout)
+        self._create_operation_controls(layout)
+        self._create_action_controls(layout)
+
+        central_widget.setLayout(layout)
+        self.update_preview()
+
+    def _create_spinbox_layout(self, label_text, min_val, max_val, default_val, callback=None):
+        """创建SpinBox布局的通用方法"""
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(label_text))
+        
+        spinbox = QSpinBox()
+        spinbox.setRange(min_val, max_val)
+        spinbox.setValue(default_val)
+        
+        if callback:
+            spinbox.valueChanged.connect(callback)
+            
+        layout.addWidget(spinbox)
+        layout.addStretch()
+        
+        return layout, spinbox
+
+    def _create_checkbox_layout(self, label_text):
+        """创建CheckBox布局的通用方法"""
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(label_text))
+        
+        checkbox = QCheckBox()
+        layout.addWidget(checkbox)
+        layout.addStretch()
+        
+        return layout, checkbox
+
+    def _create_basic_controls(self, main_layout):
+        """创建基础控件"""
         # 页数设置
-        pages_layout = QHBoxLayout()
-        pages_layout.addWidget(QLabel('页数:'))
-        self.pages_spinbox = QSpinBox()
-        self.pages_spinbox.setRange(1, 50)
-        self.pages_spinbox.setValue(10)
-        pages_layout.addWidget(self.pages_spinbox)
-        pages_layout.addStretch()
+        pages_layout, self.pages_spinbox = self._create_spinbox_layout(
+            '页数:', 1, Constants.MAX_PAGES, Constants.DEFAULT_PAGES)
+        main_layout.addLayout(pages_layout)
 
         # 列数设置
-        cols_layout = QHBoxLayout()
-        cols_layout.addWidget(QLabel('每页列数:'))
-        self.cols_spinbox = QSpinBox()
-        self.cols_spinbox.setRange(1, 5)
-        self.cols_spinbox.setValue(4)
-        self.cols_spinbox.valueChanged.connect(self.update_preview)
-        cols_layout.addWidget(self.cols_spinbox)
-        cols_layout.addStretch()
+        cols_layout, self.cols_spinbox = self._create_spinbox_layout(
+            '每页列数:', 1, Constants.MAX_COLS, Constants.DEFAULT_COLS, self.update_preview)
+        main_layout.addLayout(cols_layout)
 
         # 每列题目数设置
-        per_col_layout = QHBoxLayout()
-        per_col_layout.addWidget(QLabel('每列题目数:'))
-        self.per_col_spinbox = QSpinBox()
-        self.per_col_spinbox.setRange(10, 80)
-        self.per_col_spinbox.setValue(25)
-        self.per_col_spinbox.valueChanged.connect(self.update_preview)
-        per_col_layout.addWidget(self.per_col_spinbox)
-        per_col_layout.addStretch()
+        per_col_layout, self.per_col_spinbox = self._create_spinbox_layout(
+            '每列题数:', Constants.MIN_PER_COL, Constants.MAX_PER_COL, 
+            Constants.DEFAULT_PER_COL, self.update_preview)
+        main_layout.addLayout(per_col_layout)
 
         # 字号设置
-        font_layout = QHBoxLayout()
-        font_layout.addWidget(QLabel('字号:'))
-        self.font_spinbox = QSpinBox()
-        self.font_spinbox.setRange(12, 24)
-        self.font_spinbox.setValue(14)
-        self.font_spinbox.valueChanged.connect(self.update_preview)
-        font_layout.addWidget(self.font_spinbox)
-        font_layout.addStretch()
+        font_layout, self.font_spinbox = self._create_spinbox_layout(
+            '字号:', Constants.MIN_FONT_SIZE, Constants.MAX_FONT_SIZE, 
+            Constants.DEFAULT_FONT_SIZE, self.update_preview)
+        main_layout.addLayout(font_layout)
 
+    def _create_operation_controls(self, main_layout):
+        """创建运算类型控件"""
         # 数字个数
         num_count_layout = QHBoxLayout()
         num_count_layout.addWidget(QLabel('数字个数:'))
@@ -78,44 +122,29 @@ class MathProblemGenerator(QMainWindow):
         self.num_count_combo.addItems(['2个数字', '3个数字'])
         num_count_layout.addWidget(self.num_count_combo)
         num_count_layout.addStretch()
+        main_layout.addLayout(num_count_layout)
 
         # 包含乘法
-        multiply_layout = QHBoxLayout()
-        multiply_layout.addWidget(QLabel('包含乘法:'))
-        self.multiply_check = QCheckBox()
-        multiply_layout.addWidget(self.multiply_check)
-        multiply_layout.addStretch()
+        multiply_layout, self.multiply_check = self._create_checkbox_layout('包含乘法:')
+        main_layout.addLayout(multiply_layout)
 
         # 包含除法
-        divide_layout = QHBoxLayout()
-        divide_layout.addWidget(QLabel('包含除法:'))
-        self.divide_check = QCheckBox()
-        divide_layout.addWidget(self.divide_check)
-        divide_layout.addStretch()
+        divide_layout, self.divide_check = self._create_checkbox_layout('包含除法:')
+        main_layout.addLayout(divide_layout)
 
-        # 预览标签
-        self.preview_label = QLabel('总题数: 0')
-        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
+    def _create_action_controls(self, main_layout):
+        """创建操作控件"""
         # 生成按钮
         self.generate_btn = QPushButton('生成PDF')
         self.generate_btn.clicked.connect(self.generate_problems)
-
-        # 添加到主布局
-        layout.addLayout(pages_layout)
-        layout.addLayout(cols_layout)
-        layout.addLayout(per_col_layout)
-        layout.addLayout(font_layout)
-        layout.addLayout(num_count_layout)
-        layout.addLayout(multiply_layout)
-        layout.addLayout(divide_layout)
-        layout.addWidget(self.generate_btn)
-        layout.addStretch()
-        layout.addWidget(self.preview_label)
-
-        central_widget.setLayout(layout)
-
-        self.update_preview()
+        main_layout.addWidget(self.generate_btn)
+        
+        main_layout.addStretch()
+        
+        # 预览标签
+        self.preview_label = QLabel('总题数: 0')
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.preview_label)
 
     def update_preview(self):
         """实时更新预览总题数"""
@@ -132,128 +161,131 @@ class MathProblemGenerator(QMainWindow):
             num_count: 等号左边数值数量（2或3）
             has_multiply: 是否包含乘法
             has_divide: 是否包含除法
-
-        返回格式：
-        - 加减法：(     ) + b = c 或 a - (     ) = b
-        - 乘除法：遵循99乘法表限制
-        - 除法：2个数时等号右边显示余数
         """
-        # 确定可用的运算符
-        operators = ['+', '-']
-        if has_multiply:
-            operators.append('*')
-        if has_divide:
-            operators.append('/')
-
         if num_count == 2:
-            # 2个数的情况
-            if has_divide and '/' in operators and random.choice([True, False]):
-                # 除法且显示余数
-                divisor = random.randint(2, 9)
-                dividend = random.randint(1, 9) * divisor + random.randint(1, divisor-1)
-                quotient = dividend // divisor
-                remainder = dividend % divisor
+            return self._generate_two_number_expression(has_multiply, has_divide)
+        else:
+            return self._generate_three_number_expression(has_multiply, has_divide)
 
-                bracket_pos = random.choice([0, 1, 2])
-                match bracket_pos:
-                    case 0:
-                        return f'(     ) ÷ {divisor} = {quotient}...{remainder}'
-                    case 1:
-                        return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
-                    case 2:
-                        return f'{dividend} ÷ {divisor} ='
+    def _generate_two_number_expression(self, has_multiply, has_divide):
+        """生成两个数的表达式"""
+        # 随机选择运算类型
+        operation_choices = []
+        if has_divide:
+            operation_choices.append('divide')
+        if has_multiply:
+            operation_choices.append('multiply')
+        operation_choices.extend(['add', 'subtract'])  # 总是包含加减法
+        
+        operation = random.choice(operation_choices)
+        
+        if operation == 'divide':
+            return self._generate_division_expression()
+        elif operation == 'multiply':
+            return self._generate_multiplication_expression()
+        elif operation == 'add':
+            return self._generate_addition_expression()
+        else:  # subtract
+            return self._generate_subtraction_expression()
 
-            elif has_multiply and '*' in operators and random.choice([True, False]):
-                # 乘法（99乘法表）
-                a = random.randint(2, 9)
-                b = random.randint(2, 9)
-                result = a * b
+    def _generate_division_expression(self):
+        """生成除法表达式（带余数）"""
+        divisor = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        dividend = (random.randint(1, Constants.MAX_MULTIPLICATION_FACTOR) * divisor + 
+                   random.randint(1, divisor-1))
+        quotient = dividend // divisor
+        remainder = dividend % divisor
 
-                bracket_pos = random.choice([0, 1, 2])
-                match bracket_pos:
-                    case 0:
-                        return f'(     ) × {b} = {result}'
-                    case 1:
-                        return f'{a} × (     ) = {result}'
-                    case 2:
-                        return f'{a} × {b} ='
+        bracket_pos = random.choice([0, 1, 2])
+        if bracket_pos == 0:
+            return f'(     ) ÷ {divisor} = {quotient}...{remainder}'
+        elif bracket_pos == 1:
+            return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
+        else:
+            return f'{dividend} ÷ {divisor} = (     )...{remainder}'
 
-            else:
-                # 只有加减法，1000以内
-                operator = random.choice(['+', '-'])
-                if operator == '+':
-                    a = random.randint(1, 999)
-                    result = random.randint(a+1, 999)
-                    b = result - a
+    def _generate_multiplication_expression(self):
+        """生成乘法表达式（99乘法表）"""
+        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        result = a * b
 
-                    bracket_pos = random.choice([0, 1, 2])
-                    match bracket_pos:
-                        case 0:
-                            return f'(     ) + {b} = {result}'
-                        case 1:
-                            return f'{a} + (     ) = {result}'
-                        case 2:
-                            return f'{a} + {b} ='
-                else:
-                    # 减法确保结果为正
-                    a = random.randint(2, 999)
-                    b = random.randint(1, a-1)
-                    result = a - b
+        bracket_pos = random.choice([0, 1, 2])
+        if bracket_pos == 0:
+            return f'(     ) × {b} = {result}'
+        elif bracket_pos == 1:
+            return f'{a} × (     ) = {result}'
+        else:
+            return f'{a} × {b} = (     )'
 
-                    bracket_pos = random.choice([0, 1, 2])
-                    match bracket_pos:
-                        case 0:
-                            return f'(     ) - {b} = {result}'
-                        case 1:
-                            return f'{a} - (     ) = {result}'
-                        case 2:
-                            return f'{a} - {b} ='
+    def _generate_addition_expression(self):
+        """生成加法表达式"""
+        a = random.randint(Constants.MIN_ADDITION_VALUE, Constants.MAX_ADDITION_VALUE)
+        result = random.randint(a+1, Constants.MAX_ADDITION_VALUE)
+        b = result - a
 
-        else:  # num_count == 3
-            a,b,c = 0,0,0
-            op = random.choice(['+', '-'])  # 确保至少有一个运算符
-            match op:
-                case '+':
-                    op2 = random.choice(['×', '÷'])  # 确保至少有一个乘除法
-                    firstPos = random.choice([True, False])
-                    match op2:
-                        case '×':
-                            a = random.randint(2, 9)
-                            b = random.randint(2, 9)
-                            c = random.randint(1, 999-a*b)
-                        case '÷':
-                            a = random.randint(2, 9)
-                            b = random.randint(2, 9)
-                            a = a*b
-                            c = random.randint(1, 999-a)
+        bracket_pos = random.choice([0, 1, 2])
+        if bracket_pos == 0:
+            return f'(     ) + {b} = {result}'
+        elif bracket_pos == 1:
+            return f'{a} + (     ) = {result}'
+        else:
+            return f'{a} + {b} = (     )'
 
-                    if firstPos:
-                        return f'{a} {op2} {b} {op} {c} ='
-                    else:
-                        return f'{c} {op} {a} {op2} {b} ='
-                case '-':
-                    op2 = random.choice(['×', '÷'])  # 确保至少有一个乘除法
-                    firstPos = random.choice([True, False])
-                    match op2:
-                        case '×':
-                            a = random.randint(2, 9)
-                            b = random.randint(2, 9)
-                            if firstPos:
-                                c = random.randint(1, a*b-1)
-                            else:
-                                c = random.randint(a*b+1, 999)
-                        case '÷':
-                            a = random.randint(2, 9)
-                            b = random.randint(2, 9)
-                            a = a*b
-                            if firstPos:
-                                c = random.randint(1, a/b-1)
-                            else:
-                                c = random.randint(a+1, 999)
-                    if firstPos:
-                        return f'{a} {op2} {b} {op} {c} ='
-                    else:
-                        return f'{c} {op} {a} {op2} {b} ='
+    def _generate_subtraction_expression(self):
+        """生成减法表达式（确保结果为正）"""
+        a = random.randint(2, Constants.MAX_ADDITION_VALUE)
+        b = random.randint(Constants.MIN_ADDITION_VALUE, a-1)
+        result = a - b
+
+        bracket_pos = random.choice([0, 1, 2])
+        if bracket_pos == 0:
+            return f'(     ) - {b} = {result}'
+        elif bracket_pos == 1:
+            return f'{a} - (     ) = {result}'
+        else:
+            return f'{a} - {b} = (     )'
+
+    def _generate_three_number_expression(self, has_multiply, has_divide):
+        """生成三个数的表达式"""
+        # 确定运算符组合
+        if has_multiply and has_divide:
+            operations = [('×', '÷'), ('÷', '×')]
+        elif has_multiply:
+            operations = [('×', '+'), ('×', '-'), ('+', '×'), ('-', '×')]
+        elif has_divide:
+            operations = [('÷', '+'), ('÷', '-'), ('+', '÷'), ('-', '÷')]
+        else:
+            operations = [('+', '+'), ('+', '-'), ('-', '+'), ('-', '-')]
+        
+        op1, op2 = random.choice(operations)
+        
+        # 生成数值
+        if '×' in [op1, op2] or '÷' in [op1, op2]:
+            return self._generate_mixed_operation_expression(op1, op2)
+        else:
+            return self._generate_addition_subtraction_expression(op1, op2)
+
+    def _generate_mixed_operation_expression(self, op1, op2):
+        """生成包含乘除法的混合运算表达式"""
+        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        
+        if op1 == '÷' or op2 == '÷':
+            a = a * b  # 确保整除
+        
+        c = random.randint(Constants.MIN_ADDITION_VALUE, 99)
+        
+        return f'{a} {op1} {b} {op2} {c} = (     )'
+
+    def _generate_addition_subtraction_expression(self, op1, op2):
+        """生成纯加减法表达式"""
+        # 生成合理的数值组合，确保结果为正
+        a = random.randint(10, 200)
+        b = random.randint(1, 50)
+        c = random.randint(1, 50)
+        
+        return f'{a} {op1} {b} {op2} {c} = (     )'
 
     def create_pdf(self, filename, problems, cols=3, font_size=16, per_col=25):
         """创建PDF文档
@@ -313,38 +345,88 @@ class MathProblemGenerator(QMainWindow):
 
         doc.build(content)
 
+    def _validate_settings(self):
+        """验证用户设置"""
+        errors = []
+        
+        pages = self.pages_spinbox.value()
+        cols = self.cols_spinbox.value()
+        per_col = self.per_col_spinbox.value()
+        total_problems = pages * per_col * cols
+        
+        if total_problems > 10000:
+            errors.append(f'总题数过多({total_problems})，建议不超过10000题')
+        
+        if total_problems == 0:
+            errors.append('题目数量不能为0')
+            
+        return errors
+
+    def _get_operation_settings(self):
+        """获取运算设置"""
+        num_count = 2 if self.num_count_combo.currentText() == '2个数字' else 3
+        has_multiply = self.multiply_check.isChecked()
+        has_divide = self.divide_check.isChecked()
+        
+        return num_count, has_multiply, has_divide
+
     def generate_problems(self):
         """生成题目并创建PDF"""
+        # 验证设置
+        validation_errors = self._validate_settings()
+        if validation_errors:
+            QMessageBox.warning(self, '设置错误', '\n'.join(validation_errors))
+            return
+        
+        # 获取设置
         pages = self.pages_spinbox.value()
         cols = self.cols_spinbox.value()
         per_col = self.per_col_spinbox.value()
         font_size = self.font_spinbox.value()
-
-        # 获取运算设置
-        num_count = 2 if self.num_count_combo.currentText() == '2个数字' else 3
-        has_multiply = self.multiply_check.isChecked()
-        has_divide = self.divide_check.isChecked()
-
+        
+        num_count, has_multiply, has_divide = self._get_operation_settings()
         total_problems = pages * per_col * cols
 
         try:
             # 生成所有题目
-            problems = [self.generate_expression(num_count, has_multiply, has_divide)
-                       for _ in range(total_problems)]
+            problems = self._generate_all_problems(total_problems, num_count, has_multiply, has_divide)
 
             # 选择保存位置
-            filename, _ = QFileDialog.getSaveFileName(
-                self, '保存PDF文件', '数学题目.pdf', 'PDF文件 (*.pdf)')
+            filename = self._get_save_filename()
+            if not filename:
+                return
 
-            if filename:
-                # 创建PDF
-                self.create_pdf(filename, problems, cols, font_size, per_col)
-                QMessageBox.information(
-                    self, '成功',
-                    f'已生成{total_problems}道题目到\n{filename}')
+            # 创建PDF
+            self._create_and_save_pdf(filename, problems, cols, font_size, per_col, total_problems)
 
         except Exception as e:
             QMessageBox.critical(self, '错误', f'生成失败：{str(e)}')
+
+    def _generate_all_problems(self, total_problems, num_count, has_multiply, has_divide):
+        """生成所有题目"""
+        problems = []
+        for i in range(total_problems):
+            try:
+                problem = self.generate_expression(num_count, has_multiply, has_divide)
+                problems.append(problem)
+            except Exception as e:
+                # 如果单个题目生成失败，使用默认题目
+                problems.append(f'1 + 1 = (     )')  # 默认题目
+                print(f'题目生成失败 {i+1}: {e}')  # 调试信息
+        return problems
+
+    def _get_save_filename(self):
+        """获取保存文件名"""
+        filename, _ = QFileDialog.getSaveFileName(
+            self, '保存PDF文件', '数学题目.pdf', 'PDF文件 (*.pdf)')
+        return filename
+
+    def _create_and_save_pdf(self, filename, problems, cols, font_size, per_col, total_problems):
+        """创建并保存PDF"""
+        self.create_pdf(filename, problems, cols, font_size, per_col)
+        QMessageBox.information(
+            self, '成功',
+            f'已生成{total_problems}道题目到\n{filename}')
 
 if __name__ == '__main__':
     # 启动应用程序
