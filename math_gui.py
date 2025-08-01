@@ -302,15 +302,13 @@ class MathProblemGenerator(QMainWindow):
         # 确定运算符组合
         operations = []
         
-        # 如果选择了乘法或除法，必须包含至少一个乘除法运算符
+        # 如果选择了乘法或除法，必须包含至少一个乘除法运算符和一个加减法运算符
         if has_multiply or has_divide:
-            # 如果包含乘法，添加乘法相关组合
+            # 如果包含乘法，添加乘法与加减法的组合
             if has_multiply:
                 operations.extend([('x', '+'), ('x', '-'), ('+', 'x'), ('-', 'x')])
-                if has_divide:
-                    operations.extend([('x', '÷'), ('÷', 'x')])
             
-            # 如果包含除法，添加除法相关组合
+            # 如果包含除法，添加除法与加减法的组合
             if has_divide:
                 operations.extend([('÷', '+'), ('÷', '-'), ('+', '÷'), ('-', '÷')])
         else:
