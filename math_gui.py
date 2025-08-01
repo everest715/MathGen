@@ -17,6 +17,15 @@ class Constants:
     MAX_ADDITION_VALUE = 999
     MIN_ADDITION_VALUE = 1
     
+    # 三个数字运算的数值范围
+    MIN_LARGE_NUMBER = 10
+    MAX_LARGE_NUMBER = 200
+    MIN_SMALL_NUMBER = 1
+    MAX_SMALL_NUMBER = 50
+    MAX_TEMP_RESULT = 100
+    MAX_FINAL_RESULT = 50
+    MAX_MULTIPLICATION_RESULT = 99
+    
     # UI配置
     DEFAULT_PAGES = 10
     DEFAULT_COLS = 3
@@ -30,6 +39,10 @@ class Constants:
     MAX_PER_COL = 50
     MIN_FONT_SIZE = 12
     MAX_FONT_SIZE = 24
+    
+    # 错误处理
+    MAX_TOTAL_PROBLEMS = 10000
+    DEFAULT_PROBLEM = '1 + 1 ='
 
 class MathProblemGenerator(QMainWindow):
     """数学题目生成器主窗口类
@@ -60,6 +73,72 @@ class MathProblemGenerator(QMainWindow):
 
         central_widget.setLayout(layout)
         self.update_preview()
+    
+    # ==================== 数字生成辅助方法 ====================
+    
+    def _generate_multiplication_pair(self):
+        """生成乘法因子对，确保结果不超过99"""
+        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        return a, b
+    
+    def _generate_division_pair(self):
+        """生成除法数对，确保能整除"""
+        divisor = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        dividend = divisor * quotient
+        return dividend, divisor, quotient
+    
+    def _find_factors(self, number):
+        """找到数字在指定范围内的因子对"""
+        factors = []
+        for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1):
+            if number % i == 0:
+                j = number // i
+                if Constants.MIN_MULTIPLICATION_FACTOR <= j <= Constants.MAX_MULTIPLICATION_FACTOR:
+                    factors.append((i, j))
+        return factors
+    
+    def _generate_bracket_expression(self, a, op, b, result, bracket_pos=None):
+        """生成带括号的表达式"""
+        if bracket_pos is None:
+            bracket_pos = random.choice([0, 1, 2])
+        
+        if bracket_pos == 0:
+            return f'(     ) {op} {b} = {result}'
+        elif bracket_pos == 1:
+            return f'{a} {op} (     ) = {result}'
+        else:
+            return f'{a} {op} {b} ='
+    
+    def _validate_expression_result(self, expression):
+        """验证表达式结果的合理性"""
+        try:
+            # 简单的表达式验证
+            if '=' in expression:
+                parts = expression.split('=')
+                if len(parts) == 2 and parts[1].strip() == '':
+                    # 这是一个待填空的表达式，验证左侧
+                    left_part = parts[0].strip()
+                    # 检查是否包含合理的数字和运算符
+                    return len(left_part) > 0 and any(c.isdigit() for c in left_part)
+            return True
+        except:
+            return False
+    
+    def _safe_generate_expression(self, generator_func, max_attempts=10):
+        """安全地生成表达式，带重试机制"""
+        for attempt in range(max_attempts):
+            try:
+                expression = generator_func()
+                if self._validate_expression_result(expression):
+                    return expression
+            except Exception as e:
+                continue
+        # 如果所有尝试都失败，返回默认表达式
+        return Constants.DEFAULT_PROBLEM
+    
+    # ==================== UI创建方法 ====================
 
     def _create_spinbox_layout(self, label_text, min_val, max_val, default_val, callback=None):
         """创建SpinBox布局的通用方法"""
@@ -196,55 +275,27 @@ class MathProblemGenerator(QMainWindow):
         quotient = dividend // divisor
         remainder = dividend % divisor
 
-        bracket_pos = random.choice([0, 1, 2])
-        if bracket_pos == 0:
-            return f'(     ) ÷ {divisor} = {quotient}...{remainder}'
-        elif bracket_pos == 1:
-            return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
-        else:
-            return f'{dividend} ÷ {divisor} ='
+        return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}')
 
     def _generate_multiplication_expression(self):
         """生成乘法表达式（99乘法表）"""
-        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        a, b = self._generate_multiplication_pair()
         result = a * b
-
-        bracket_pos = random.choice([0, 1, 2])
-        if bracket_pos == 0:
-            return f'(     ) × {b} = {result}'
-        elif bracket_pos == 1:
-            return f'{a} × (     ) = {result}'
-        else:
-            return f'{a} × {b} ='
+        return self._generate_bracket_expression(a, '×', b, result)
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
         a = random.randint(Constants.MIN_ADDITION_VALUE, Constants.MAX_ADDITION_VALUE)
         result = random.randint(a+1, Constants.MAX_ADDITION_VALUE)
         b = result - a
-
-        bracket_pos = random.choice([0, 1, 2])
-        if bracket_pos == 0:
-            return f'(     ) + {b} = {result}'
-        elif bracket_pos == 1:
-            return f'{a} + (     ) = {result}'
-        else:
-            return f'{a} + {b} ='
+        return self._generate_bracket_expression(a, '+', b, result)
 
     def _generate_subtraction_expression(self):
         """生成减法表达式（确保结果为正）"""
         a = random.randint(2, Constants.MAX_ADDITION_VALUE)
         b = random.randint(Constants.MIN_ADDITION_VALUE, a-1)
         result = a - b
-
-        bracket_pos = random.choice([0, 1, 2])
-        if bracket_pos == 0:
-            return f'(     ) - {b} = {result}'
-        elif bracket_pos == 1:
-            return f'{a} - (     ) = {result}'
-        else:
-            return f'{a} - {b} ='
+        return self._generate_bracket_expression(a, '-', b, result)
 
     def _generate_three_number_expression(self, has_multiply, has_divide):
         """生成三个数的表达式"""
@@ -279,33 +330,29 @@ class MathProblemGenerator(QMainWindow):
         # 根据运算符类型生成合适的数值，确保每一步都不出现负数且乘法结果在99以内
         if op1 == '×':
             # 生成乘法因子，2到9之间的数相乘必然不超过99
-            a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            a, b = self._generate_multiplication_pair()
             temp_result = a * b
         elif op1 == '÷':
             # 先生成两个2到9之间的数，用它们的乘积作为被除数，其中一个数作为除数
-            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
-            quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 商
-            a = b * quotient  # 被除数 = 除数 × 商
-            temp_result = quotient  # 第一步运算的结果就是商
+            a, b, temp_result = self._generate_division_pair()
         elif op1 == '+':
-            a = random.randint(10, 200)
-            b = random.randint(1, 50)
+            a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
             temp_result = a + b
         else:  # op1 == '-'
             # 先生成减数和差值，再计算被减数，避免负数
-            b = random.randint(1, 50)
-            temp_result = random.randint(1, 100)
+            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            temp_result = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_TEMP_RESULT)
             a = temp_result + b  # 确保 a - b = temp_result > 0
         
         # 生成第三个数，确保最终结果为正数且乘法结果在99以内
         if op2 == '×':
             if op1 == '-':
                 # 对于 a - b × c 的形式，先确定最终结果，再计算c
-                final_result = random.randint(1, 50)  # 最终结果
+                final_result = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_FINAL_RESULT)  # 最终结果
                 # a - b × c = final_result，所以 b × c = a - final_result
                 bc_product = a - final_result
-                if bc_product > 0 and bc_product <= 99:
+                if bc_product > 0 and bc_product <= Constants.MAX_MULTIPLICATION_RESULT:
                     # 找到b和c的组合使得b × c = bc_product
                     valid_c_values = [i for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
                                      if bc_product % i == 0 and bc_product // i <= Constants.MAX_MULTIPLICATION_FACTOR 
@@ -320,7 +367,7 @@ class MathProblemGenerator(QMainWindow):
                 else:
                     # 如果bc_product不合适，重新生成
                     c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                    max_b = min(Constants.MAX_MULTIPLICATION_FACTOR, 99 // c, a // c)
+                    max_b = min(Constants.MAX_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_RESULT // c, a // c)
                     if max_b >= Constants.MIN_MULTIPLICATION_FACTOR:
                         b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_b)
                     else:
@@ -328,7 +375,7 @@ class MathProblemGenerator(QMainWindow):
                         c = min(c, a // b)
             else:
                 # 对于其他情况，确保乘法结果不超过99
-                max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, 99 // temp_result) if temp_result > 0 else Constants.MAX_MULTIPLICATION_FACTOR
+                max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_RESULT // temp_result) if temp_result > 0 else Constants.MAX_MULTIPLICATION_FACTOR
                 if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
                     c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
                 else:
@@ -365,17 +412,17 @@ class MathProblemGenerator(QMainWindow):
                 a = temp_result * b
             elif op1 == '+':
                 # 第一步是加法，确保a + b = temp_result
-                b = random.randint(1, min(50, temp_result - 1)) if temp_result > 1 else 1
+                b = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_SMALL_NUMBER, temp_result - 1)) if temp_result > 1 else Constants.MIN_SMALL_NUMBER
                 a = temp_result - b
             else:  # op1 == '-'
                 # 第一步是减法，确保a - b = temp_result
-                b = random.randint(1, 50)
+                b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
                 a = temp_result + b
         elif op2 == '+':
-            c = random.randint(1, 99)
+            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_MULTIPLICATION_RESULT)
         else:  # op2 == '-'
             # 确保最终结果为正数
-            c = random.randint(1, min(99, temp_result - 1)) if temp_result > 1 else 1
+            c = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_MULTIPLICATION_RESULT, temp_result - 1)) if temp_result > 1 else Constants.MIN_SMALL_NUMBER
         
         return f'{a} {op1} {b} {op2} {c} ='
 
@@ -384,26 +431,26 @@ class MathProblemGenerator(QMainWindow):
         # 生成合理的数值组合，确保每一步和最终结果都为正数
         if op1 == '+' and op2 == '+':
             # a + b + c
-            a = random.randint(10, 200)
-            b = random.randint(1, 50)
-            c = random.randint(1, 50)
+            a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
         elif op1 == '+' and op2 == '-':
             # a + b - c，确保 a + b > c
-            a = random.randint(10, 200)
-            b = random.randint(1, 50)
+            a = random.randint(Constants.MIN_LARGE_NUMBER, Constants.MAX_LARGE_NUMBER)
+            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
             temp_sum = a + b
-            c = random.randint(1, min(50, temp_sum - 1)) if temp_sum > 1 else 1
+            c = random.randint(Constants.MIN_SMALL_NUMBER, min(Constants.MAX_SMALL_NUMBER, temp_sum - 1)) if temp_sum > 1 else Constants.MIN_SMALL_NUMBER
         elif op1 == '-' and op2 == '+':
             # a - b + c，确保 a > b
-            b = random.randint(1, 50)
-            c = random.randint(1, 50)
-            a = random.randint(b + 1, b + 200)  # 确保 a > b
+            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            a = random.randint(b + 1, b + Constants.MAX_LARGE_NUMBER)  # 确保 a > b
         else:  # op1 == '-' and op2 == '-'
             # a - b - c，确保 a > b + c
-            b = random.randint(1, 50)
-            c = random.randint(1, 50)
+            b = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
+            c = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_SMALL_NUMBER)
             min_a = b + c + 1  # 确保 a - b - c > 0
-            a = random.randint(min_a, min_a + 200)
+            a = random.randint(min_a, min_a + Constants.MAX_LARGE_NUMBER)
         
         return f'{a} {op1} {b} {op2} {c} ='
 
@@ -474,8 +521,8 @@ class MathProblemGenerator(QMainWindow):
         per_col = self.per_col_spinbox.value()
         total_problems = pages * per_col * cols
         
-        if total_problems > 10000:
-            errors.append(f'总题数过多({total_problems})，建议不超过10000题')
+        if total_problems > Constants.MAX_TOTAL_PROBLEMS:
+            errors.append(f'总题数过多({total_problems})，建议不超过{Constants.MAX_TOTAL_PROBLEMS}题')
         
         if total_problems == 0:
             errors.append('题目数量不能为0')
@@ -526,13 +573,11 @@ class MathProblemGenerator(QMainWindow):
         """生成所有题目"""
         problems = []
         for i in range(total_problems):
-            try:
-                problem = self.generate_expression(num_count, has_multiply, has_divide)
-                problems.append(problem)
-            except Exception as e:
-                # 如果单个题目生成失败，使用默认题目
-                problems.append(f'1 + 1 =')  # 默认题目
-                print(f'题目生成失败 {i+1}: {e}')  # 调试信息
+            # 使用安全生成函数
+            problem = self._safe_generate_expression(
+                lambda: self.generate_expression(num_count, has_multiply, has_divide)
+            )
+            problems.append(problem)
         return problems
 
     def _get_save_filename(self):
