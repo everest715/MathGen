@@ -202,7 +202,7 @@ class MathProblemGenerator(QMainWindow):
         elif bracket_pos == 1:
             return f'{dividend} ÷ (     ) = {quotient}...{remainder}'
         else:
-            return f'{dividend} ÷ {divisor} = (     )...{remainder}'
+            return f'{dividend} ÷ {divisor} ='
 
     def _generate_multiplication_expression(self):
         """生成乘法表达式（99乘法表）"""
@@ -249,14 +249,20 @@ class MathProblemGenerator(QMainWindow):
     def _generate_three_number_expression(self, has_multiply, has_divide):
         """生成三个数的表达式"""
         # 确定运算符组合
-        if has_multiply and has_divide:
-            operations = [('×', '÷'), ('÷', '×')]
-        elif has_multiply:
-            operations = [('×', '+'), ('×', '-'), ('+', '×'), ('-', '×')]
-        elif has_divide:
-            operations = [('÷', '+'), ('÷', '-'), ('+', '÷'), ('-', '÷')]
-        else:
-            operations = [('+', '+'), ('+', '-'), ('-', '+'), ('-', '-')]
+        operations = []
+        
+        # 基础加减法运算
+        operations.extend([('+', '+'), ('+', '-'), ('-', '+'), ('-', '-')])
+        
+        # 如果包含乘法，添加乘法相关组合
+        if has_multiply:
+            operations.extend([('×', '+'), ('×', '-'), ('+', '×'), ('-', '×')])
+            if has_divide:
+                operations.extend([('×', '÷'), ('÷', '×')])
+        
+        # 如果包含除法，添加除法相关组合
+        if has_divide:
+            operations.extend([('÷', '+'), ('÷', '-'), ('+', '÷'), ('-', '÷')])
         
         op1, op2 = random.choice(operations)
         
@@ -268,13 +274,40 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        # 根据运算符类型生成合适的数值
+        if op1 == '×':
+            a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        elif op1 == '÷':
+            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            a = b * quotient  # 确保整除
+        else:  # op1 是 + 或 -
+            a = random.randint(10, 200)
+            b = random.randint(1, 50)
         
-        if op1 == '÷' or op2 == '÷':
-            a = a * b  # 确保整除
-        
-        c = random.randint(Constants.MIN_ADDITION_VALUE, 99)
+        # 生成第三个数
+        if op2 == '×':
+            c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+        elif op2 == '÷':
+            # 如果第二个运算是除法，需要确保前面的结果能被c整除
+            if op1 == '×':
+                temp_result = a * b
+            elif op1 == '÷':
+                temp_result = a // b
+            elif op1 == '+':
+                temp_result = a + b
+            else:  # op1 == '-'
+                temp_result = a - b
+            
+            # 选择一个能整除temp_result的数作为c
+            divisors = [i for i in range(2, 10) if temp_result % i == 0]
+            if divisors:
+                c = random.choice(divisors)
+            else:
+                c = random.randint(2, 9)
+        else:  # op2 是 + 或 -
+            c = random.randint(1, 99)
         
         return f'{a} {op1} {b} {op2} {c} = (     )'
 
