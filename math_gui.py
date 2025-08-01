@@ -275,13 +275,13 @@ class MathProblemGenerator(QMainWindow):
         quotient = dividend // divisor
         remainder = dividend % divisor
 
-        return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}')
+        return self._generate_bracket_expression(dividend, '/', divisor, f'{quotient}...{remainder}')
 
     def _generate_multiplication_expression(self):
         """生成乘法表达式(99乘法表)"""
         a, b = self._generate_multiplication_pair()
         result = a * b
-        return self._generate_bracket_expression(a, '×', b, result)
+        return self._generate_bracket_expression(a, 'x', b, result)
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
@@ -306,13 +306,13 @@ class MathProblemGenerator(QMainWindow):
         if has_multiply or has_divide:
             # 如果包含乘法，添加乘法相关组合
             if has_multiply:
-                operations.extend([('×', '+'), ('×', '-'), ('+', '×'), ('-', '×')])
+                operations.extend([('x', '+'), ('x', '-'), ('+', 'x'), ('-', 'x')])
                 if has_divide:
-                    operations.extend([('×', '÷'), ('÷', '×')])
+                    operations.extend([('x', '/'), ('/', 'x')])
             
             # 如果包含除法，添加除法相关组合
             if has_divide:
-                operations.extend([('÷', '+'), ('÷', '-'), ('+', '÷'), ('-', '÷')])
+                operations.extend([('/', '+'), ('/', '-'), ('+', '/'), ('-', '/')])
         else:
             # 如果没有选择乘法和除法，只生成纯加减法运算
             operations.extend([('+', '+'), ('+', '-'), ('-', '+'), ('-', '-')])
@@ -320,7 +320,7 @@ class MathProblemGenerator(QMainWindow):
         op1, op2 = random.choice(operations)
         
         # 生成数值
-        if '×' in [op1, op2] or '÷' in [op1, op2]:
+        if 'x' in [op1, op2] or '/' in [op1, op2]:
             return self._generate_mixed_operation_expression(op1, op2)
         else:
             return self._generate_addition_subtraction_expression(op1, op2)
@@ -328,11 +328,11 @@ class MathProblemGenerator(QMainWindow):
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
         # 根据运算符类型生成合适的数值，确保每一步都不出现负数且乘法结果在99以内
-        if op1 == '×':
+        if op1 == 'x':
             # 生成乘法因子，2到9之间的数相乘必然不超过99
             a, b = self._generate_multiplication_pair()
             temp_result = a * b
-        elif op1 == '÷':
+        elif op1 == '/':
             # 先生成两个2到9之间的数，用它们的乘积作为被除数，其中一个数作为除数
             a, b, temp_result = self._generate_division_pair()
         elif op1 == '+':
@@ -346,14 +346,14 @@ class MathProblemGenerator(QMainWindow):
             a = temp_result + b  # 确保 a - b = temp_result > 0
         
         # 生成第三个数，确保最终结果为正数且乘法结果在99以内
-        if op2 == '×':
+        if op2 == 'x':
             if op1 == '-':
-                # 对于 a - b × c 的形式，先确定最终结果，再计算c
+                # 对于 a - b x c 的形式，先确定最终结果，再计算c
                 final_result = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_FINAL_RESULT)  # 最终结果
-                # a - b × c = final_result，所以 b × c = a - final_result
+                # a - b x c = final_result，所以 b x c = a - final_result
                 bc_product = a - final_result
                 if bc_product > 0 and bc_product <= Constants.MAX_MULTIPLICATION_RESULT:
-                    # 找到b和c的组合使得b × c = bc_product
+                    # 找到b和c的组合使得b x c = bc_product
                     valid_c_values = [i for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
                                      if bc_product % i == 0 and bc_product // i <= Constants.MAX_MULTIPLICATION_FACTOR 
                                      and bc_product // i >= Constants.MIN_MULTIPLICATION_FACTOR]
@@ -380,14 +380,14 @@ class MathProblemGenerator(QMainWindow):
                     c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
                 else:
                     c = Constants.MIN_MULTIPLICATION_FACTOR
-        elif op2 == '÷':
+        elif op2 == '/':
             # 先生成两个2到9之间的数,用它们的乘积作为被除数(temp_result),其中一个数作为除数
             c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
             quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 商
-            temp_result = c * quotient  # 被除数 = 除数 × 商
+            temp_result = c * quotient  # 被除数 = 除数 x 商
             
             # 重新计算a和b，使得第一步运算的结果等于temp_result
-            if op1 == '×':
+            if op1 == 'x':
                 # 寻找temp_result的因子分解
                 factors = []
                 for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1):
@@ -406,7 +406,7 @@ class MathProblemGenerator(QMainWindow):
                     c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
                     quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
                     temp_result = c * quotient
-            elif op1 == '÷':
+            elif op1 == '/':
                 # 第一步也是除法，生成简单的除法组合
                 b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
                 a = temp_result * b
