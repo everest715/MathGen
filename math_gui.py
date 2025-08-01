@@ -216,7 +216,7 @@ class MathProblemGenerator(QMainWindow):
         elif bracket_pos == 1:
             return f'{a} × (     ) = {result}'
         else:
-            return f'{a} × {b} = (     )'
+            return f'{a} × {b} ='
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
@@ -230,7 +230,7 @@ class MathProblemGenerator(QMainWindow):
         elif bracket_pos == 1:
             return f'{a} + (     ) = {result}'
         else:
-            return f'{a} + {b} = (     )'
+            return f'{a} + {b} ='
 
     def _generate_subtraction_expression(self):
         """生成减法表达式（确保结果为正）"""
@@ -244,7 +244,7 @@ class MathProblemGenerator(QMainWindow):
         elif bracket_pos == 1:
             return f'{a} - (     ) = {result}'
         else:
-            return f'{a} - {b} = (     )'
+            return f'{a} - {b} ='
 
     def _generate_three_number_expression(self, has_multiply, has_divide):
         """生成三个数的表达式"""
@@ -479,7 +479,7 @@ class MathProblemGenerator(QMainWindow):
                 problems.append(problem)
             except Exception as e:
                 # 如果单个题目生成失败，使用默认题目
-                problems.append(f'1 + 1 = (     )')  # 默认题目
+                problems.append(f'1 + 1 =')  # 默认题目
                 print(f'题目生成失败 {i+1}: {e}')  # 调试信息
         return problems
 
