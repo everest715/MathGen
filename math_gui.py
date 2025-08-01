@@ -278,11 +278,9 @@ class MathProblemGenerator(QMainWindow):
         """生成包含乘除法的混合运算表达式"""
         # 根据运算符类型生成合适的数值，确保每一步都不出现负数且乘法结果在99以内
         if op1 == '×':
-            # 生成乘法因子，确保结果不超过99
-            valid_pairs = [(i, j) for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
-                          for j in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
-                          if i * j <= 99]
-            a, b = random.choice(valid_pairs)
+            # 生成乘法因子，2到9之间的数相乘必然不超过99
+            a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
             temp_result = a * b
         elif op1 == '÷':
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
@@ -345,15 +343,21 @@ class MathProblemGenerator(QMainWindow):
                 temp_result = c * random.randint(2, 20)
                 # 重新计算a和b
                 if op1 == '×':
-                    # 重新生成乘法组合
-                    valid_pairs = [(i, j) for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
-                                  for j in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
-                                  if i * j == temp_result]
-                    if valid_pairs:
-                        a, b = random.choice(valid_pairs)
+                    # 重新生成乘法组合，找到两个因子使得它们的乘积等于temp_result
+                    # 寻找temp_result的因子分解
+                    factors = []
+                    for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1):
+                        if temp_result % i == 0:
+                            j = temp_result // i
+                            if Constants.MIN_MULTIPLICATION_FACTOR <= j <= Constants.MAX_MULTIPLICATION_FACTOR:
+                                factors.append((i, j))
+                    if factors:
+                        a, b = random.choice(factors)
                     else:
-                        a = random.randint(2, 9)
-                        b = temp_result // a if a > 0 and temp_result % a == 0 else temp_result
+                        # 如果找不到合适的因子，重新生成temp_result
+                        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                        temp_result = a * b
                 elif op1 == '÷':
                     b = random.randint(2, 9)
                     a = temp_result * b
