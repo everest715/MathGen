@@ -346,38 +346,32 @@ class MathProblemGenerator(QMainWindow):
         # 生成第三个数，确保最终结果为正数且乘法结果在99以内
         if op2 == 'x':
             if op1 == '-':
-                # 对于 a - b x c 的形式，先确定最终结果，再计算c
-                final_result = random.randint(Constants.MIN_SMALL_NUMBER, Constants.MAX_FINAL_RESULT)  # 最终结果
-                # a - b x c = final_result，所以 b x c = a - final_result
-                bc_product = a - final_result
-                if bc_product > 0 and bc_product <= Constants.MAX_MULTIPLICATION_RESULT:
-                    # 找到b和c的组合使得b x c = bc_product
-                    valid_c_values = [i for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
-                                     if bc_product % i == 0 and bc_product // i <= Constants.MAX_MULTIPLICATION_FACTOR 
-                                     and bc_product // i >= Constants.MIN_MULTIPLICATION_FACTOR]
-                    if valid_c_values:
-                        c = random.choice(valid_c_values)
-                        b = bc_product // c
-                        temp_result = a - b  # 重新计算temp_result用于后续运算
-                    else:
-                        # 如果找不到合适的组合，使用简单的方法
-                        c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, min(Constants.MAX_MULTIPLICATION_FACTOR, a // Constants.MIN_MULTIPLICATION_FACTOR))
+                # 对于 a - b x c 的形式，确保 b 和 c 都在2-9范围内，且 a > b x c
+                b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                # 确保 a 足够大，使得 a - b x c > 0
+                min_a = b * c + 1  # 至少比乘积大1
+                max_a = min(Constants.MAX_LARGE_NUMBER, b * c + Constants.MAX_FINAL_RESULT)  # 不要太大
+                if min_a <= max_a:
+                    a = random.randint(min_a, max_a)
                 else:
-                    # 如果bc_product不合适，重新生成
-                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                    max_b = min(Constants.MAX_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_RESULT // c, a // c)
-                    if max_b >= Constants.MIN_MULTIPLICATION_FACTOR:
-                        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_b)
-                    else:
-                        b = Constants.MIN_MULTIPLICATION_FACTOR
-                        c = min(c, a // b)
+                    # 如果范围不合理，重新生成较小的b和c
+                    b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, min(Constants.MAX_MULTIPLICATION_FACTOR, 5))
+                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, min(Constants.MAX_MULTIPLICATION_FACTOR, 5))
+                    a = random.randint(b * c + 1, b * c + Constants.MAX_FINAL_RESULT)
+                temp_result = a - b  # 重新计算temp_result
             else:
-                # 对于其他情况，确保乘法结果不超过99
-                max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_RESULT // temp_result) if temp_result > 0 else Constants.MAX_MULTIPLICATION_FACTOR
-                if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
-                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
-                else:
-                    c = Constants.MIN_MULTIPLICATION_FACTOR
+                # 对于其他情况（op1是+、x、÷），确保第二个乘法因子在2-9范围内
+                # 同时确保乘法结果不超过99
+                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                # 如果temp_result * c会超过99，需要调整
+                if temp_result * c > Constants.MAX_MULTIPLICATION_RESULT:
+                    # 重新生成一个较小的c
+                    max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_RESULT // temp_result) if temp_result > 0 else Constants.MAX_MULTIPLICATION_FACTOR
+                    if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
+                        c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
+                    else:
+                        c = Constants.MIN_MULTIPLICATION_FACTOR
         elif op2 == '÷':
             # 先生成两个2到9之间的数,用它们的乘积作为被除数(temp_result),其中一个数作为除数
             c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
