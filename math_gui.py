@@ -278,12 +278,11 @@ class MathProblemGenerator(QMainWindow):
         """生成包含乘除法的混合运算表达式"""
         # 根据运算符类型生成合适的数值，确保每一步都不出现负数且乘法结果在99以内
         if op1 == '×':
-            a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-            b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-            # 确保乘法结果不超过99
-            while a * b > 99:
-                a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+            # 生成乘法因子，确保结果不超过99
+            valid_pairs = [(i, j) for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
+                          for j in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
+                          if i * j <= 99]
+            a, b = random.choice(valid_pairs)
             temp_result = a * b
         elif op1 == '÷':
             b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
@@ -295,25 +294,46 @@ class MathProblemGenerator(QMainWindow):
             b = random.randint(1, 50)
             temp_result = a + b
         else:  # op1 == '-'
-            # 确保减法结果为正数
+            # 先生成减数和差值，再计算被减数，避免负数
             b = random.randint(1, 50)
             temp_result = random.randint(1, 100)
             a = temp_result + b  # 确保 a - b = temp_result > 0
         
         # 生成第三个数，确保最终结果为正数且乘法结果在99以内
         if op2 == '×':
-            # 确保第二个乘法运算结果不超过99，且最终结果为正数
             if op1 == '-':
-                # 对于减法后乘法的情况，需要确保temp_result * c不会导致负的最终结果
-                # 由于是a - b × c的形式，需要确保a > b × c
-                max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, 99 // b) if b > 0 else Constants.MAX_MULTIPLICATION_FACTOR
-                max_c = min(max_c, a // b) if b > 0 else max_c  # 确保a > b × c
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max(Constants.MIN_MULTIPLICATION_FACTOR, max_c))
-            else:
-                c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-                # 确保乘法结果不超过99
-                while temp_result * c > 99:
+                # 对于 a - b × c 的形式，先确定最终结果，再计算c
+                final_result = random.randint(1, 50)  # 最终结果
+                # a - b × c = final_result，所以 b × c = a - final_result
+                bc_product = a - final_result
+                if bc_product > 0 and bc_product <= 99:
+                    # 找到b和c的组合使得b × c = bc_product
+                    valid_c_values = [i for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
+                                     if bc_product % i == 0 and bc_product // i <= Constants.MAX_MULTIPLICATION_FACTOR 
+                                     and bc_product // i >= Constants.MIN_MULTIPLICATION_FACTOR]
+                    if valid_c_values:
+                        c = random.choice(valid_c_values)
+                        b = bc_product // c
+                        temp_result = a - b  # 重新计算temp_result用于后续运算
+                    else:
+                        # 如果找不到合适的组合，使用简单的方法
+                        c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, min(Constants.MAX_MULTIPLICATION_FACTOR, a // Constants.MIN_MULTIPLICATION_FACTOR))
+                else:
+                    # 如果bc_product不合适，重新生成
                     c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
+                    max_b = min(Constants.MAX_MULTIPLICATION_FACTOR, 99 // c, a // c)
+                    if max_b >= Constants.MIN_MULTIPLICATION_FACTOR:
+                        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_b)
+                    else:
+                        b = Constants.MIN_MULTIPLICATION_FACTOR
+                        c = min(c, a // b)
+            else:
+                # 对于其他情况，确保乘法结果不超过99
+                max_c = min(Constants.MAX_MULTIPLICATION_FACTOR, 99 // temp_result) if temp_result > 0 else Constants.MAX_MULTIPLICATION_FACTOR
+                if max_c >= Constants.MIN_MULTIPLICATION_FACTOR:
+                    c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, max_c)
+                else:
+                    c = Constants.MIN_MULTIPLICATION_FACTOR
         elif op2 == '÷':
             # 选择一个能整除temp_result的数作为c
             divisors = [i for i in range(2, min(10, temp_result + 1)) if temp_result % i == 0]
@@ -325,12 +345,15 @@ class MathProblemGenerator(QMainWindow):
                 temp_result = c * random.randint(2, 20)
                 # 重新计算a和b
                 if op1 == '×':
-                    a = random.randint(2, 9)
-                    b = temp_result // a
-                    # 确保乘法结果不超过99
-                    while a * b > 99:
+                    # 重新生成乘法组合
+                    valid_pairs = [(i, j) for i in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
+                                  for j in range(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR + 1) 
+                                  if i * j == temp_result]
+                    if valid_pairs:
+                        a, b = random.choice(valid_pairs)
+                    else:
                         a = random.randint(2, 9)
-                        b = temp_result // a if a > 0 else temp_result
+                        b = temp_result // a if a > 0 and temp_result % a == 0 else temp_result
                 elif op1 == '÷':
                     b = random.randint(2, 9)
                     a = temp_result * b
