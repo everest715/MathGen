@@ -237,7 +237,7 @@ class MathProblemGenerator(QMainWindow):
         """生成单个数学表达式
 
         参数：
-            num_count: 等号左边数值数量（2或3）
+            num_count: 等号左边数值数量(2或3)
             has_multiply: 是否包含乘法
             has_divide: 是否包含除法
         """
@@ -268,7 +268,7 @@ class MathProblemGenerator(QMainWindow):
             return self._generate_subtraction_expression()
 
     def _generate_division_expression(self):
-        """生成除法表达式（带余数）"""
+        """生成除法表达式(带余数)"""
         divisor = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
         dividend = (random.randint(1, Constants.MAX_MULTIPLICATION_FACTOR) * divisor + 
                    random.randint(1, divisor-1))
@@ -278,7 +278,7 @@ class MathProblemGenerator(QMainWindow):
         return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}')
 
     def _generate_multiplication_expression(self):
-        """生成乘法表达式（99乘法表）"""
+        """生成乘法表达式(99乘法表)"""
         a, b = self._generate_multiplication_pair()
         result = a * b
         return self._generate_bracket_expression(a, '×', b, result)
@@ -291,7 +291,7 @@ class MathProblemGenerator(QMainWindow):
         return self._generate_bracket_expression(a, '+', b, result)
 
     def _generate_subtraction_expression(self):
-        """生成减法表达式（确保结果为正）"""
+        """生成减法表达式(确保结果为正)"""
         a = random.randint(2, Constants.MAX_ADDITION_VALUE)
         b = random.randint(Constants.MIN_ADDITION_VALUE, a-1)
         result = a - b
@@ -381,7 +381,7 @@ class MathProblemGenerator(QMainWindow):
                 else:
                     c = Constants.MIN_MULTIPLICATION_FACTOR
         elif op2 == '÷':
-            # 先生成两个2到9之间的数，用它们的乘积作为被除数（temp_result），其中一个数作为除数
+            # 先生成两个2到9之间的数,用它们的乘积作为被除数(temp_result),其中一个数作为除数
             c = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 除数
             quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)  # 商
             temp_result = c * quotient  # 被除数 = 除数 × 商

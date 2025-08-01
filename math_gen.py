@@ -32,7 +32,7 @@ def generate_expression():
     b = random.randint(1, 99)
     a, b = max(a, b), min(a, b)  # 确保a >= b，减法结果为正
 
-    # 随机选择要加括号的位置（0-左边 1-右边）
+    # 随机选择要加括号的位置(0-左边 1-右边)
     bracket_pos = random.choice([0, 1])
 
     if bracket_pos == 0:
@@ -52,7 +52,7 @@ def create_pdf(filename, problems, cols=3):
     参数：
         filename: 输出文件名
         problems: 题目列表
-        cols: 每页列数（默认3列）
+        cols: 每页列数(默认3列)
     """
     # 自定义多列文档模板
     class MultiColumnDocTemplate(BaseDocTemplate):
