@@ -33,8 +33,24 @@ class Constants:
     MIN_FONT_SIZE = 12
     MAX_FONT_SIZE = 24
     
+    # 数字和结果范围常量
+    MIN_RANGE_VALUE = 1
+    MAX_RANGE_VALUE = 999
+    DEFAULT_MIN_NUMBER = 1
+    DEFAULT_MAX_NUMBER = 100
+    DEFAULT_MIN_RESULT = 1
+    DEFAULT_MAX_RESULT = 100
+    
+    # PDF生成相关常量
+    PDF_MARGIN = 48
+    PDF_TOP_MARGIN = 18
+    PDF_BOTTOM_MARGIN = 36
+    PDF_FRAME_PADDING = 6
+    PDF_FRAME_SPACING = 12
+    
     # 错误处理
     MAX_TOTAL_PROBLEMS = 10000
+    MAX_GENERATION_ATTEMPTS = 10
     DEFAULT_PROBLEM = '1 + 1 ='
 
 class MathProblemGenerator(QMainWindow):
@@ -68,6 +84,39 @@ class MathProblemGenerator(QMainWindow):
         self.update_preview()
     
     # ==================== 数字生成辅助方法 ====================
+    
+    def _get_user_ranges(self):
+        """获取用户设置的数字和结果范围，并确保合理性"""
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
+            
+        return min_num, max_num, min_result, max_result
+    
+    def _generate_safe_random(self, min_val, max_val, fallback_min=1, fallback_max=10):
+        """安全地生成随机数，如果范围无效则使用备用范围"""
+        try:
+            if min_val <= max_val:
+                return random.randint(min_val, max_val)
+            else:
+                return random.randint(fallback_min, fallback_max)
+        except ValueError:
+            return random.randint(fallback_min, fallback_max)
+    
+    def _is_valid_expression_result(self, result, min_result, max_result):
+        """验证表达式结果是否在有效范围内"""
+        return min_result <= result <= max_result
+    
+    def _is_valid_number(self, number, min_num, max_num):
+        """验证数字是否在有效范围内"""
+        return min_num <= number <= max_num
     
     def _generate_multiplication_pair(self):
         """生成乘法因子对，确保结果不超过99"""
@@ -119,7 +168,7 @@ class MathProblemGenerator(QMainWindow):
         except:
             return False
     
-    def _safe_generate_expression(self, generator_func, max_attempts=10):
+    def _safe_generate_expression(self, generator_func, max_attempts=Constants.MAX_GENERATION_ATTEMPTS):
         """安全地生成表达式，带重试机制"""
         for attempt in range(max_attempts):
             try:
@@ -190,15 +239,15 @@ class MathProblemGenerator(QMainWindow):
         number_range_layout.addWidget(QLabel('数字范围:'))
         
         self.min_number_spinbox = QSpinBox()
-        self.min_number_spinbox.setRange(1, 999)
-        self.min_number_spinbox.setValue(Constants.MIN_RESULT)
+        self.min_number_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.min_number_spinbox.setValue(Constants.DEFAULT_MIN_NUMBER)
         number_range_layout.addWidget(self.min_number_spinbox)
         
         number_range_layout.addWidget(QLabel('到'))
         
         self.max_number_spinbox = QSpinBox()
-        self.max_number_spinbox.setRange(1, 999)
-        self.max_number_spinbox.setValue(Constants.MAX_RESULT)
+        self.max_number_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.max_number_spinbox.setValue(Constants.DEFAULT_MAX_NUMBER)
         number_range_layout.addWidget(self.max_number_spinbox)
         
         number_range_layout.addStretch()
@@ -209,15 +258,15 @@ class MathProblemGenerator(QMainWindow):
         result_range_layout.addWidget(QLabel('结果范围:'))
         
         self.min_result_spinbox = QSpinBox()
-        self.min_result_spinbox.setRange(1, 999)
-        self.min_result_spinbox.setValue(Constants.MIN_RESULT)
+        self.min_result_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.min_result_spinbox.setValue(Constants.DEFAULT_MIN_RESULT)
         result_range_layout.addWidget(self.min_result_spinbox)
         
         result_range_layout.addWidget(QLabel('到'))
         
         self.max_result_spinbox = QSpinBox()
-        self.max_result_spinbox.setRange(1, 999)
-        self.max_result_spinbox.setValue(Constants.MAX_RESULT)
+        self.max_result_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.max_result_spinbox.setValue(Constants.DEFAULT_MAX_RESULT)
         result_range_layout.addWidget(self.max_result_spinbox)
         
         result_range_layout.addStretch()
@@ -300,16 +349,7 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_division_expression(self):
         """生成除法表达式(带余数)"""
-        min_num = self.min_number_spinbox.value()
-        max_num = self.max_number_spinbox.value()
-        min_result = self.min_result_spinbox.value()
-        max_result = self.max_result_spinbox.value()
-        
-        # 确保数字范围合理
-        if min_num > max_num:
-            min_num, max_num = max_num, min_num
-        if min_result > max_result:
-            min_result, max_result = max_result, min_result
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
             
         # 除数在数字范围内
         divisor = random.randint(max(2, min_num), min(max_num, 9))  # 限制除数不要太大
@@ -329,16 +369,7 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_multiplication_expression(self):
         """生成乘法表达式"""
-        min_num = self.min_number_spinbox.value()
-        max_num = self.max_number_spinbox.value()
-        min_result = self.min_result_spinbox.value()
-        max_result = self.max_result_spinbox.value()
-        
-        # 确保数字范围合理
-        if min_num > max_num:
-            min_num, max_num = max_num, min_num
-        if min_result > max_result:
-            min_result, max_result = max_result, min_result
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
             
         # 生成两个乘数，确保结果在范围内
         a = random.randint(max(2, min_num), min(max_num, 9))  # 限制乘数范围
@@ -357,57 +388,41 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
-        min_num = self.min_number_spinbox.value()
-        max_num = self.max_number_spinbox.value()
-        min_result = self.min_result_spinbox.value()
-        max_result = self.max_result_spinbox.value()
-        
-        # 确保数字范围合理
-        if min_num > max_num:
-            min_num, max_num = max_num, min_num
-        if min_result > max_result:
-            min_result, max_result = max_result, min_result
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
             
-        a = random.randint(min_num, min(max_num, max_result - min_num))
-        result = random.randint(max(min_result, a + min_num), min(max_result, a + max_num))
-        b = result - a
+        # 生成两个加数，确保和在结果范围内
+        a = self._generate_safe_random(min_num, max_num)
+        max_b = min(max_num, max_result - a)
+        if max_b < min_num:
+            # 如果无法满足条件，调整a
+            a = self._generate_safe_random(min_num, max_result - min_num)
+            max_b = min(max_num, max_result - a)
+        b = self._generate_safe_random(min_num, max_b)
+        result = a + b
         
-        # 确保b在数字范围内
-        if b < min_num or b > max_num:
-            # 重新生成
-            a = random.randint(min_num, max_num)
-            b = random.randint(min_num, min(max_num, max_result - a))
-            result = a + b
-            
         return self._generate_bracket_expression(a, '+', b, result)
 
     def _generate_subtraction_expression(self):
         """生成减法表达式(确保结果为正)"""
-        min_num = self.min_number_spinbox.value()
-        max_num = self.max_number_spinbox.value()
-        min_result = self.min_result_spinbox.value()
-        max_result = self.max_result_spinbox.value()
-        
-        # 确保数字范围合理
-        if min_num > max_num:
-            min_num, max_num = max_num, min_num
-        if min_result > max_result:
-            min_result, max_result = max_result, min_result
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
             
-        a = random.randint(max(min_num, min_result + min_num), max_num)
-        b = random.randint(min_num, min(max_num, a - min_result))
-        result = a - b
+        # 生成被减数和减数，确保差在结果范围内且为正
+        result = self._generate_safe_random(min_result, max_result)
+        b = self._generate_safe_random(min_num, max_num)
+        a = result + b
         
-        # 确保结果在范围内
-        if result < min_result or result > max_result:
-            # 重新生成
-            result = random.randint(min_result, max_result)
-            b = random.randint(min_num, max_num)
-            a = result + b
-            # 确保a在数字范围内
-            if a > max_num:
-                a = max_num
-                result = a - b
+        # 确保被减数在数字范围内
+        if a > max_num:
+            # 调整减数
+            max_b = min(max_num, max_num - result)
+            if max_b >= min_num:
+                b = self._generate_safe_random(min_num, max_b)
+                a = result + b
+            else:
+                # 重新生成较小的结果
+                result = self._generate_safe_random(min_result, min(max_result, max_num - min_num))
+                b = self._generate_safe_random(min_num, max_num - result)
+                a = result + b
                 
         return self._generate_bracket_expression(a, '-', b, result)
 
@@ -439,16 +454,7 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        min_num = self.min_number_spinbox.value()
-        max_num = self.max_number_spinbox.value()
-        min_result = self.min_result_spinbox.value()
-        max_result = self.max_result_spinbox.value()
-        
-        # 确保数字范围合理
-        if min_num > max_num:
-            min_num, max_num = max_num, min_num
-        if min_result > max_result:
-            min_result, max_result = max_result, min_result
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
         
         # 确定哪个运算符是乘除法，优先处理乘除法
         if op1 in ['x', '÷']:
@@ -506,16 +512,7 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_addition_subtraction_expression(self, op1, op2):
         """生成纯加减法表达式"""
-        min_num = self.min_number_spinbox.value()
-        max_num = self.max_number_spinbox.value()
-        min_result = self.min_result_spinbox.value()
-        max_result = self.max_result_spinbox.value()
-        
-        # 确保数字范围合理
-        if min_num > max_num:
-            min_num, max_num = max_num, min_num
-        if min_result > max_result:
-            min_result, max_result = max_result, min_result
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
         
         # 生成合理的数值组合，确保每一步和最终结果都为正数
         if op1 == '+' and op2 == '+':
@@ -564,10 +561,11 @@ class MathProblemGenerator(QMainWindow):
                 frames = []
                 for i in range(self.cols):
                     left = self.leftMargin + i * frame_width
-                    width = frame_width - 12  # 留出间距
+                    width = frame_width - Constants.PDF_FRAME_SPACING  # 留出间距
                     frame = Frame(left, 0,
                                 width, self.height,
-                                leftPadding=6, bottomPadding=0, rightPadding=6, topPadding=0)
+                                leftPadding=Constants.PDF_FRAME_PADDING, bottomPadding=0, 
+                                rightPadding=Constants.PDF_FRAME_PADDING, topPadding=0)
                     frames.append(frame)
 
                 template = PageTemplate(frames=frames)
@@ -577,11 +575,11 @@ class MathProblemGenerator(QMainWindow):
         # 创建PDF文档
         doc = MultiColumnDocTemplate(filename, cols=cols,
                                    pagesize=letter,
-                                   rightMargin=48, leftMargin=48,
-                                   topMargin=18, bottomMargin=36)
+                                   rightMargin=Constants.PDF_MARGIN, leftMargin=Constants.PDF_MARGIN,
+                                   topMargin=Constants.PDF_TOP_MARGIN, bottomMargin=Constants.PDF_BOTTOM_MARGIN)
 
         # 计算可用的列高度 (letter页面高度 - 上下边距)
-        available_height = letter[1] - 18 - 36  # topMargin + bottomMargin
+        available_height = letter[1] - Constants.PDF_TOP_MARGIN - Constants.PDF_BOTTOM_MARGIN
 
         # 计算每道题目的最大高度，确保每列不超过指定数量
         max_line_height = available_height / per_col
@@ -628,11 +626,11 @@ class MathProblemGenerator(QMainWindow):
             errors.append('结果范围设置错误：最小值不能大于最大值')
         
         # 验证范围的合理性
-        if min_num < 1 or max_num > 999:
-            errors.append('数字范围应在1-999之间')
+        if min_num < Constants.MIN_RANGE_VALUE or max_num > Constants.MAX_RANGE_VALUE:
+            errors.append(f'数字范围应在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间')
         
-        if min_result < 1 or max_result > 999:
-            errors.append('结果范围应在1-999之间')
+        if min_result < Constants.MIN_RANGE_VALUE or max_result > Constants.MAX_RANGE_VALUE:
+            errors.append(f'结果范围应在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间')
             
         return errors
 
