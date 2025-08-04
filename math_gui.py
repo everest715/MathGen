@@ -184,6 +184,44 @@ class MathProblemGenerator(QMainWindow):
             '字号:', Constants.MIN_FONT_SIZE, Constants.MAX_FONT_SIZE, 
             Constants.DEFAULT_FONT_SIZE, self.update_preview)
         main_layout.addLayout(font_layout)
+        
+        # 数字范围设置
+        number_range_layout = QHBoxLayout()
+        number_range_layout.addWidget(QLabel('数字范围:'))
+        
+        self.min_number_spinbox = QSpinBox()
+        self.min_number_spinbox.setRange(1, 999)
+        self.min_number_spinbox.setValue(Constants.MIN_RESULT)
+        number_range_layout.addWidget(self.min_number_spinbox)
+        
+        number_range_layout.addWidget(QLabel('到'))
+        
+        self.max_number_spinbox = QSpinBox()
+        self.max_number_spinbox.setRange(1, 999)
+        self.max_number_spinbox.setValue(Constants.MAX_RESULT)
+        number_range_layout.addWidget(self.max_number_spinbox)
+        
+        number_range_layout.addStretch()
+        main_layout.addLayout(number_range_layout)
+        
+        # 结果范围设置
+        result_range_layout = QHBoxLayout()
+        result_range_layout.addWidget(QLabel('结果范围:'))
+        
+        self.min_result_spinbox = QSpinBox()
+        self.min_result_spinbox.setRange(1, 999)
+        self.min_result_spinbox.setValue(Constants.MIN_RESULT)
+        result_range_layout.addWidget(self.min_result_spinbox)
+        
+        result_range_layout.addWidget(QLabel('到'))
+        
+        self.max_result_spinbox = QSpinBox()
+        self.max_result_spinbox.setRange(1, 999)
+        self.max_result_spinbox.setValue(Constants.MAX_RESULT)
+        result_range_layout.addWidget(self.max_result_spinbox)
+        
+        result_range_layout.addStretch()
+        main_layout.addLayout(result_range_layout)
 
     def _create_operation_controls(self, main_layout):
         """创建运算类型控件"""
@@ -262,32 +300,115 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_division_expression(self):
         """生成除法表达式(带余数)"""
-        divisor = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, Constants.MAX_MULTIPLICATION_FACTOR)
-        dividend = (random.randint(1, Constants.MAX_MULTIPLICATION_FACTOR) * divisor + 
-                   random.randint(1, divisor-1))
-        quotient = dividend // divisor
-        remainder = dividend % divisor
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保数字范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
+            
+        # 除数在数字范围内
+        divisor = random.randint(max(2, min_num), min(max_num, 9))  # 限制除数不要太大
+        # 商在结果范围内
+        quotient = random.randint(min_result, min(max_result, max_num // divisor))
+        # 余数小于除数
+        remainder = random.randint(0, divisor - 1)
+        dividend = quotient * divisor + remainder
+        
+        # 确保被除数在数字范围内
+        if dividend > max_num:
+            dividend = max_num
+            quotient = dividend // divisor
+            remainder = dividend % divisor
 
         return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}')
 
     def _generate_multiplication_expression(self):
-        """生成乘法表达式(99乘法表)"""
-        a, b = self._generate_multiplication_pair()
+        """生成乘法表达式"""
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保数字范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
+            
+        # 生成两个乘数，确保结果在范围内
+        a = random.randint(max(2, min_num), min(max_num, 9))  # 限制乘数范围
+        max_b = min(max_num, max_result // a) if a > 0 else max_num
+        b = random.randint(max(2, min_num), min(max_b, 9))
         result = a * b
+        
+        # 确保结果在范围内
+        if result < min_result or result > max_result:
+            # 重新生成较小的数
+            a = random.randint(2, min(5, max_num))
+            b = random.randint(2, min(max_result // a, max_num))
+            result = a * b
+            
         return self._generate_bracket_expression(a, 'x', b, result)
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
-        a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - 1)
-        result = random.randint(a + 1, Constants.MAX_RESULT)
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保数字范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
+            
+        a = random.randint(min_num, min(max_num, max_result - min_num))
+        result = random.randint(max(min_result, a + min_num), min(max_result, a + max_num))
         b = result - a
+        
+        # 确保b在数字范围内
+        if b < min_num or b > max_num:
+            # 重新生成
+            a = random.randint(min_num, max_num)
+            b = random.randint(min_num, min(max_num, max_result - a))
+            result = a + b
+            
         return self._generate_bracket_expression(a, '+', b, result)
 
     def _generate_subtraction_expression(self):
         """生成减法表达式(确保结果为正)"""
-        a = random.randint(2, Constants.MAX_RESULT)
-        b = random.randint(Constants.MIN_RESULT, a-1)
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保数字范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
+            
+        a = random.randint(max(min_num, min_result + min_num), max_num)
+        b = random.randint(min_num, min(max_num, a - min_result))
         result = a - b
+        
+        # 确保结果在范围内
+        if result < min_result or result > max_result:
+            # 重新生成
+            result = random.randint(min_result, max_result)
+            b = random.randint(min_num, max_num)
+            a = result + b
+            # 确保a在数字范围内
+            if a > max_num:
+                a = max_num
+                result = a - b
+                
         return self._generate_bracket_expression(a, '-', b, result)
 
     def _generate_three_number_expression(self, has_multiply, has_divide):
@@ -318,49 +439,64 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        # 新的实现逻辑：当op1和op2中有乘除时，先实现乘除的算式，再完善另一个算式
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保数字范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
         
         # 确定哪个运算符是乘除法，优先处理乘除法
         if op1 in ['x', '÷']:
             # 第一个是乘除法，第二个是加减法
             if op1 == 'x':
-                a, b = self._generate_multiplication_pair()
+                a = random.randint(max(2, min_num), min(max_num, 9))
+                b = random.randint(max(2, min_num), min(max_num, 9))
                 temp_result = a * b
             else:  # op1 == '÷'
-                a, b, temp_result = self._generate_division_pair()
+                b = random.randint(max(2, min_num), min(max_num, 9))
+                quotient = random.randint(max(1, min_result), min(max_result, max_num // b))
+                a = b * quotient
+                temp_result = quotient
             
             # 基于乘除法结果生成加减法
             if op2 == '+':
-                c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - temp_result)
+                c = random.randint(min_num, min(max_num, max_result - temp_result))
             else:  # op2 == '-'
                 # 确保最终结果为正数
-                c = random.randint(Constants.MIN_RESULT, temp_result - 1)
+                c = random.randint(min_num, min(max_num, temp_result - min_result))
         
         elif op2 in ['x', '÷']:
             # 第二个是乘除法，第一个是加减法
             if op2 == 'x':
                 # 先生成乘法部分
-                b, c = self._generate_multiplication_pair()
+                b = random.randint(max(2, min_num), min(max_num, 9))
+                c = random.randint(max(2, min_num), min(max_num, 9))
                 multiplication_result = b * c
                 
                 # 基于乘法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - multiplication_result)
+                    a = random.randint(min_num, min(max_num, max_result - multiplication_result))
                 else:  # op1 == '-'
                     # 确保a - (b * c) > 0
-                    a = random.randint(multiplication_result + 1, Constants.MAX_RESULT)
+                    a = random.randint(max(min_num, multiplication_result + min_result), max_num)
             
             else:  # op2 == '÷'
                 # 先生成除法部分
-                c, quotient = self._generate_multiplication_pair()
+                c = random.randint(max(2, min_num), min(max_num, 9))
+                quotient = random.randint(max(1, min_result), min(max_result, max_num // c))
                 b = c * quotient  # 被除数
                 
                 # 基于除法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - quotient)
+                    a = random.randint(min_num, min(max_num, max_result - quotient))
                 else:  # op1 == '-'
-                    # 确保a - b > 0
-                    a = random.randint(b + 1, Constants.MAX_RESULT)
+                    # 确保a - quotient > 0
+                    a = random.randint(max(min_num, quotient + min_result), max_num)
         
         else:
             # 这种情况不应该出现在混合运算中，因为至少要有一个乘除法
@@ -370,28 +506,39 @@ class MathProblemGenerator(QMainWindow):
 
     def _generate_addition_subtraction_expression(self, op1, op2):
         """生成纯加减法表达式"""
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        
+        # 确保数字范围合理
+        if min_num > max_num:
+            min_num, max_num = max_num, min_num
+        if min_result > max_result:
+            min_result, max_result = max_result, min_result
+        
         # 生成合理的数值组合，确保每一步和最终结果都为正数
         if op1 == '+' and op2 == '+':
             # a + b + c
-            a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT)
-            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a)
-            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a - b)
+            a = random.randint(min_num, min(max_num, max_result // 3))
+            b = random.randint(min_num, min(max_num, (max_result - a) // 2))
+            c = random.randint(min_num, min(max_num, max_result - a - b))
         elif op1 == '+' and op2 == '-':
             # a + b - c，确保 a + b > c
-            a = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT)
-            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a)
+            a = random.randint(min_num, max_num)
+            b = random.randint(min_num, min(max_num, max_result - a))
             temp_sum = a + b
-            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - temp_sum - 1)
+            c = random.randint(min_num, min(max_num, temp_sum - min_result))
         elif op1 == '-' and op2 == '+':
             # a - b + c，确保 a > b
-            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - 1)
-            a = random.randint(b + 1, Constants.MAX_RESULT)  # 确保 a > b
-            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - a + b)
+            b = random.randint(min_num, max_num)
+            a = random.randint(max(min_num, b + min_result), max_num)
+            c = random.randint(min_num, min(max_num, max_result - a + b))
         else:  # op1 == '-' and op2 == '-'
             # a - b - c，确保 a > b + c
-            b = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT)
-            c = random.randint(Constants.MIN_RESULT, Constants.MAX_RESULT - b)
-            a = random.randint(b + c + 1, Constants.MAX_RESULT)
+            b = random.randint(min_num, max_num)
+            c = random.randint(min_num, min(max_num, max_result - b))
+            a = random.randint(max(min_num, b + c + min_result), max_num)
         
         return f'{a} {op1} {b} {op2} {c} ='
 
@@ -467,6 +614,25 @@ class MathProblemGenerator(QMainWindow):
         
         if total_problems == 0:
             errors.append('题目数量不能为0')
+        
+        # 验证数字范围
+        min_num = self.min_number_spinbox.value()
+        max_num = self.max_number_spinbox.value()
+        if min_num > max_num:
+            errors.append('数字范围设置错误：最小值不能大于最大值')
+        
+        # 验证结果范围
+        min_result = self.min_result_spinbox.value()
+        max_result = self.max_result_spinbox.value()
+        if min_result > max_result:
+            errors.append('结果范围设置错误：最小值不能大于最大值')
+        
+        # 验证范围的合理性
+        if min_num < 1 or max_num > 999:
+            errors.append('数字范围应在1-999之间')
+        
+        if min_result < 1 or max_result > 999:
+            errors.append('结果范围应在1-999之间')
             
         return errors
 
