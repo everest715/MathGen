@@ -43,6 +43,34 @@ class MathProblemGeneratorUI(QMainWindow):
         central_widget.setLayout(layout)
         self.update_preview()
     
+    def _create_spinbox_layout(self, label_text, min_val, max_val, default_val, callback=None):
+        """创建SpinBox布局的通用方法"""
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(label_text))
+        
+        spinbox = QSpinBox()
+        spinbox.setRange(min_val, max_val)
+        spinbox.setValue(default_val)
+        
+        if callback:
+            spinbox.valueChanged.connect(callback)
+            
+        layout.addWidget(spinbox)
+        layout.addStretch()
+        
+        return layout, spinbox
+
+    def _create_checkbox_layout(self, label_text):
+        """创建CheckBox布局的通用方法"""
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(label_text))
+        
+        checkbox = QCheckBox()
+        layout.addWidget(checkbox)
+        layout.addStretch()
+        
+        return layout, checkbox
+
     def _create_basic_controls(self, layout):
         """创建基本控件"""
         # 数字范围设置
@@ -86,77 +114,97 @@ class MathProblemGeneratorUI(QMainWindow):
         layout.addWidget(result_range_group)
         
         # 页数设置
-        pages_group = QWidget()
-        pages_layout = QHBoxLayout()
-        pages_layout.addWidget(QLabel('页数:'))
-        self.pages_spinbox = QSpinBox()
-        self.pages_spinbox.setRange(1, 100)
-        self.pages_spinbox.setValue(10)
-        self.pages_spinbox.valueChanged.connect(self.update_preview)
-        pages_layout.addWidget(self.pages_spinbox)
-        pages_group.setLayout(pages_layout)
-        layout.addWidget(pages_group)
+        pages_layout, self.pages_spinbox = self._create_spinbox_layout(
+            '页数:', 1, Constants.MAX_PAGES, Constants.DEFAULT_PAGES)
+        layout.addLayout(pages_layout)
 
         # 列数设置
-        cols_group = QWidget()
-        cols_layout = QHBoxLayout()
-        cols_layout.addWidget(QLabel('列数:'))
-        self.cols_spinbox = QSpinBox()
-        self.cols_spinbox.setRange(1, 5)
-        self.cols_spinbox.setValue(3)
-        self.cols_spinbox.valueChanged.connect(self.update_preview)
-        cols_layout.addWidget(self.cols_spinbox)
-        cols_group.setLayout(cols_layout)
-        layout.addWidget(cols_group)
+        cols_layout, self.cols_spinbox = self._create_spinbox_layout(
+            '每页列数:', 1, Constants.MAX_COLS, Constants.DEFAULT_COLS, self.update_preview)
+        layout.addLayout(cols_layout)
 
-        # 每列题数设置
-        per_col_group = QWidget()
-        per_col_layout = QHBoxLayout()
-        per_col_layout.addWidget(QLabel('每列题数:'))
-        self.per_col_spinbox = QSpinBox()
-        self.per_col_spinbox.setRange(5, 50)
-        self.per_col_spinbox.setValue(25)
-        self.per_col_spinbox.valueChanged.connect(self.update_preview)
-        per_col_layout.addWidget(self.per_col_spinbox)
-        per_col_group.setLayout(per_col_layout)
-        layout.addWidget(per_col_group)
+        # 每列题目数设置
+        per_col_layout, self.per_col_spinbox = self._create_spinbox_layout(
+            '每列题数:', Constants.MIN_PER_COL, Constants.MAX_PER_COL, 
+            Constants.DEFAULT_PER_COL, self.update_preview)
+        layout.addLayout(per_col_layout)
 
         # 字号设置
-        font_group = QWidget()
-        font_layout = QHBoxLayout()
-        font_layout.addWidget(QLabel('字号:'))
-        self.font_spinbox = QSpinBox()
-        self.font_spinbox.setRange(12, 24)
-        self.font_spinbox.setValue(16)
-        font_layout.addWidget(self.font_spinbox)
-        font_group.setLayout(font_layout)
-        layout.addWidget(font_group)
-
-        # 总题数预览
-        self.preview_label = QLabel('总题数: 0')
-        layout.addWidget(self.preview_label)
+        font_layout, self.font_spinbox = self._create_spinbox_layout(
+            '字号:', Constants.MIN_FONT_SIZE, Constants.MAX_FONT_SIZE, 
+            Constants.DEFAULT_FONT_SIZE, self.update_preview)
+        layout.addLayout(font_layout)
+        
+        # 数字范围设置
+        number_range_layout = QHBoxLayout()
+        number_range_layout.addWidget(QLabel('数字范围:'))
+        
+        self.min_number_spinbox = QSpinBox()
+        self.min_number_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.min_number_spinbox.setValue(Constants.DEFAULT_MIN_NUMBER)
+        number_range_layout.addWidget(self.min_number_spinbox)
+        
+        number_range_layout.addWidget(QLabel('到'))
+        
+        self.max_number_spinbox = QSpinBox()
+        self.max_number_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.max_number_spinbox.setValue(Constants.DEFAULT_MAX_NUMBER)
+        number_range_layout.addWidget(self.max_number_spinbox)
+        
+        number_range_layout.addStretch()
+        layout.addLayout(number_range_layout)
+        
+        # 结果范围设置
+        result_range_layout = QHBoxLayout()
+        result_range_layout.addWidget(QLabel('结果范围:'))
+        
+        self.min_result_spinbox = QSpinBox()
+        self.min_result_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.min_result_spinbox.setValue(Constants.DEFAULT_MIN_RESULT)
+        result_range_layout.addWidget(self.min_result_spinbox)
+        
+        result_range_layout.addWidget(QLabel('到'))
+        
+        self.max_result_spinbox = QSpinBox()
+        self.max_result_spinbox.setRange(Constants.MIN_RANGE_VALUE, Constants.MAX_RANGE_VALUE)
+        self.max_result_spinbox.setValue(Constants.DEFAULT_MAX_RESULT)
+        result_range_layout.addWidget(self.max_result_spinbox)
+        
+        result_range_layout.addStretch()
+        layout.addLayout(result_range_layout)
     
-    def _create_operation_controls(self, layout):
+    def _create_operation_controls(self, main_layout):
         """创建运算类型控件"""
-        operation_group = QWidget()
-        operation_layout = QVBoxLayout()
-        
-        operation_layout.addWidget(QLabel('运算类型:'))
-        
-        # 运算类型选择
-        self.operation_combo = QComboBox()
-        self.operation_combo.addItems(['加法', '减法', '乘法', '除法', '混合运算'])
-        operation_layout.addWidget(self.operation_combo)
-        
-        operation_group.setLayout(operation_layout)
-        layout.addWidget(operation_group)
+        # 数字个数
+        num_count_layout = QHBoxLayout()
+        num_count_layout.addWidget(QLabel('数字个数:'))
+        self.num_count_combo = QComboBox()
+        self.num_count_combo.addItems(['2个数字', '3个数字'])
+        num_count_layout.addWidget(self.num_count_combo)
+        num_count_layout.addStretch()
+        main_layout.addLayout(num_count_layout)
+
+        # 包含乘法
+        multiply_layout, self.multiply_check = self._create_checkbox_layout('包含乘法:')
+        main_layout.addLayout(multiply_layout)
+
+        # 包含除法
+        divide_layout, self.divide_check = self._create_checkbox_layout('包含除法:')
+        main_layout.addLayout(divide_layout)
     
-    def _create_action_controls(self, layout):
-        """创建操作按钮"""
-        # 生成PDF按钮
-        self.generate_button = QPushButton('生成PDF')
-        self.generate_button.clicked.connect(self.generate_pdf)
-        layout.addWidget(self.generate_button)
+    def _create_action_controls(self, main_layout):
+        """创建操作控件"""
+        # 生成按钮
+        self.generate_btn = QPushButton('生成PDF')
+        self.generate_btn.clicked.connect(self.generate_problems)
+        main_layout.addWidget(self.generate_btn)
+        
+        main_layout.addStretch()
+        
+        # 预览标签
+        self.preview_label = QLabel('总题数: 0')
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.preview_label)
     
     def update_preview(self):
         """更新总题数预览"""
@@ -167,26 +215,31 @@ class MathProblemGeneratorUI(QMainWindow):
         self.preview_label.setText(f'总题数: {total}')
     
     def _validate_settings(self):
-        """验证设置的有效性"""
+        """验证用户设置"""
         errors = []
         
-        # 验证总题数
-        total_problems = self.pages_spinbox.value() * self.cols_spinbox.value() * self.per_col_spinbox.value()
-        if total_problems > Constants.MAX_TOTAL_PROBLEMS:
-            errors.append(f'总题数不能超过{Constants.MAX_TOTAL_PROBLEMS}题')
+        pages = self.pages_spinbox.value()
+        cols = self.cols_spinbox.value()
+        per_col = self.per_col_spinbox.value()
+        total_problems = pages * per_col * cols
         
-        # 获取范围值
+        if total_problems > Constants.MAX_TOTAL_PROBLEMS:
+            errors.append(f'总题数过多({total_problems})，建议不超过{Constants.MAX_TOTAL_PROBLEMS}题')
+        
+        if total_problems == 0:
+            errors.append('题目数量不能为0')
+        
+        # 验证数字范围
         min_num = self.min_number_spinbox.value()
         max_num = self.max_number_spinbox.value()
+        if min_num > max_num:
+            errors.append('数字范围设置错误：最小值不能大于最大值')
+        
+        # 验证结果范围
         min_result = self.min_result_spinbox.value()
         max_result = self.max_result_spinbox.value()
-        
-        # 验证范围的合理性
-        if min_num > max_num:
-            errors.append('数字范围最小值不能大于最大值')
-        
         if min_result > max_result:
-            errors.append('结果范围最小值不能大于最大值')
+            errors.append('结果范围设置错误：最小值不能大于最大值')
         
         # 验证范围的合理性
         if min_num < Constants.MIN_RANGE_VALUE or max_num > Constants.MAX_RANGE_VALUE:
@@ -197,34 +250,64 @@ class MathProblemGeneratorUI(QMainWindow):
             
         return errors
     
-    def _get_operation_settings(self):
-        """获取运算设置"""
-        operation_map = {
-            '加法': 'addition',
-            '减法': 'subtraction', 
-            '乘法': 'multiplication',
-            '除法': 'division',
-            '混合运算': 'mixed'
-        }
-        
-        selected_text = self.operation_combo.currentText()
-        return operation_map.get(selected_text, 'mixed')
+
     
-    def generate_problems(self, operation_type, count):
-        """生成指定数量的题目"""
-        # 更新算式引擎的范围设置
-        self.math_engine.update_ranges(
-            self.min_number_spinbox.value(),
-            self.max_number_spinbox.value(),
-            self.min_result_spinbox.value(),
-            self.max_result_spinbox.value()
+    def generate_problems(self):
+        """生成PDF文件"""
+        # 验证设置
+        errors = self._validate_settings()
+        if errors:
+            QMessageBox.warning(self, '设置错误', '\n'.join(errors))
+            return
+        
+        # 选择保存文件
+        filename, _ = QFileDialog.getSaveFileName(
+            self, '保存PDF文件', 'math_problems.pdf', 'PDF文件 (*.pdf)'
         )
         
-        problems = []
-        for _ in range(count):
-            problem = self.math_engine.generate_expression(operation_type)
-            problems.append(problem)
-        return problems
+        if not filename:
+            return
+        
+        try:
+            # 获取设置
+            pages = self.pages_spinbox.value()
+            cols = self.cols_spinbox.value()
+            per_col = self.per_col_spinbox.value()
+            font_size = self.font_spinbox.value()
+            
+            # 计算总题数
+            total_problems = pages * cols * per_col
+            
+            # 更新算式引擎的范围设置
+            self.math_engine.update_ranges(
+                self.min_number_spinbox.value(),
+                self.max_number_spinbox.value(),
+                self.min_result_spinbox.value(),
+                self.max_result_spinbox.value()
+            )
+            
+            # 获取运算设置
+            num_count = 3 if self.num_count_combo.currentText() == '3个数字' else 2
+            include_multiply = self.multiply_check.isChecked()
+            include_divide = self.divide_check.isChecked()
+            
+            # 生成题目
+            problems = []
+            for _ in range(total_problems):
+                problem = self.math_engine.generate_expression(
+                    num_count=num_count,
+                    include_multiply=include_multiply,
+                    include_divide=include_divide
+                )
+                problems.append(problem)
+            
+            # 创建PDF
+            self.create_pdf(filename, problems, cols, font_size)
+            
+            QMessageBox.information(self, '成功', f'PDF文件已生成: {filename}')
+            
+        except Exception as e:
+            QMessageBox.critical(self, '错误', f'生成PDF时出错: {str(e)}')
     
     def create_pdf(self, filename, problems, cols, font_size):
         """创建PDF文件"""
@@ -282,43 +365,7 @@ class MathProblemGeneratorUI(QMainWindow):
         # 生成PDF
         doc.build(story)
     
-    def generate_pdf(self):
-        """生成PDF文件"""
-        # 验证设置
-        errors = self._validate_settings()
-        if errors:
-            QMessageBox.warning(self, '设置错误', '\n'.join(errors))
-            return
-        
-        # 选择保存文件
-        filename, _ = QFileDialog.getSaveFileName(
-            self, '保存PDF文件', 'math_problems.pdf', 'PDF文件 (*.pdf)'
-        )
-        
-        if not filename:
-            return
-        
-        try:
-            # 获取设置
-            pages = self.pages_spinbox.value()
-            cols = self.cols_spinbox.value()
-            per_col = self.per_col_spinbox.value()
-            font_size = self.font_spinbox.value()
-            operation_type = self._get_operation_settings()
-            
-            # 计算总题数
-            total_problems = pages * cols * per_col
-            
-            # 生成题目
-            problems = self.generate_problems(operation_type, total_problems)
-            
-            # 创建PDF
-            self.create_pdf(filename, problems, cols, font_size)
-            
-            QMessageBox.information(self, '成功', f'PDF文件已生成: {filename}')
-            
-        except Exception as e:
-            QMessageBox.critical(self, '错误', f'生成PDF时出错: {str(e)}')
+
 
 def main():
     """主函数"""
