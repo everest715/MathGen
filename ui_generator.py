@@ -10,13 +10,15 @@ from constants import Constants
 class UIGenerator:
     """用户界面生成器"""
     
-    def __init__(self, root):
+    def __init__(self, root, generate_callback=None):
         """初始化UI生成器
         
         参数:
             root: tkinter根窗口
+            generate_callback: 生成按钮的回调函数
         """
         self.root = root
+        self.generate_callback = generate_callback
         self.setup_window()
         self.create_variables()
         self.create_widgets()
@@ -155,7 +157,7 @@ class UIGenerator:
     
     def create_generate_button(self, parent):
         """创建生成按钮"""
-        ttk.Button(parent, text="生成数学题", command=self.on_generate_click).grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=6, column=0, columnspan=2, pady=20)
     
     def browse_save_path(self):
         """浏览保存路径"""
@@ -166,10 +168,7 @@ class UIGenerator:
         if filename:
             self.save_path.set(filename)
     
-    def on_generate_click(self):
-        """生成按钮点击事件处理"""
-        # 这个方法将在主程序中被重写
-        pass
+
     
     def get_user_settings(self):
         """获取用户设置"""
