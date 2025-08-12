@@ -70,9 +70,17 @@ class UIGenerator:
     
     def create_widgets(self):
         """创建界面组件"""
+        # 配置根窗口的grid权重
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        
         # 创建主框架
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # 配置主框架的grid权重
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
         
         # 题目类型选择
         self.create_problem_type_frame(main_frame)
