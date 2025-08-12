@@ -37,6 +37,10 @@ class Constants:
     # 保存路径
     DEFAULT_SAVE_PATH = "数学题.pdf"
     
+    # 数字数量选择
+    DEFAULT_NUM_COUNT = 2
+    NUM_COUNT_OPTIONS = ['2个数字', '3个数字']
+    
     # 范围限制
     MAX_PAGES = 100
     MAX_COLS = 5
