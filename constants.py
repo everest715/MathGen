@@ -26,11 +26,11 @@ class Constants:
     
     # 默认数字范围
     DEFAULT_MIN_NUMBER = 1
-    DEFAULT_MAX_NUMBER = 100
+    DEFAULT_MAX_NUMBER = 999
     
     # 默认结果范围
     DEFAULT_MIN_RESULT = 1
-    DEFAULT_MAX_RESULT = 100
+    DEFAULT_MAX_RESULT = 999
     
     # 兼容性常量（保持向后兼容）
     MAX_RESULT = MAX_RANGE_VALUE
@@ -38,10 +38,10 @@ class Constants:
     
     # ==================== 页面布局配置 ====================
     # 默认页面设置
-    DEFAULT_ROWS_PER_PAGE = 10
+    DEFAULT_ROWS_PER_PAGE = 25
     DEFAULT_COLS_PER_PAGE = 3
     DEFAULT_TOTAL_PAGES = 10
-    DEFAULT_FONT_SIZE = 16
+    DEFAULT_FONT_SIZE = 14
     
     # 页面设置范围
     MIN_ROWS_PER_PAGE = 1
