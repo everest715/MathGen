@@ -15,7 +15,7 @@ class Constants:
     
     # UI配置
     WINDOW_TITLE = "数学题生成器"
-    WINDOW_SIZE = "600x500"
+    WINDOW_SIZE = "600x580"
     DEFAULT_PAGES = 10
     DEFAULT_COLS = 3
     DEFAULT_PER_COL = 25
