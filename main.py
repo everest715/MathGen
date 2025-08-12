@@ -17,12 +17,9 @@ class MathProblemGenerator:
     def __init__(self):
         """初始化数学题生成器"""
         self.root = tk.Tk()
-        self.ui = UIGenerator(self.root)
+        self.ui = UIGenerator(self.root, self.generate_problems)
         self.math_engine = MathEngine()
         self.pdf_generator = PDFGenerator()
-        
-        # 绑定生成按钮事件
-        self.ui.on_generate_click = self.generate_problems
     
     def run(self):
         """运行应用程序"""
