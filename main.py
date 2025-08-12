@@ -143,12 +143,16 @@ class MathProblemGenerator:
         返回:
             运算设置字典
         """
+        # 处理数字数量选择
+        num_count = 2 if settings['num_count'] == '2个数字' else 3
+        
         return {
             'has_addition': settings['has_addition'],
             'has_subtraction': settings['has_subtraction'],
             'has_multiplication': settings['has_multiplication'],
             'has_division': settings['has_division'],
-            'has_mixed': settings['has_mixed']
+            'has_mixed': settings['has_mixed'],
+            'num_count': num_count
         }
     
     def _generate_all_problems(self, rows_per_page, cols_per_page, total_pages, operation_settings):
@@ -174,14 +178,14 @@ class MathProblemGenerator:
             available_operations = []
             
             if operation_settings['has_mixed']:
-                # 如果选择了混合运算，生成三个数的表达式
+                # 如果选择了混合运算，使用用户选择的数字数量
                 problem = self.math_engine.generate_expression(
-                    num_count=3,
+                    num_count=operation_settings['num_count'],
                     has_multiply=operation_settings['has_multiplication'],
                     has_divide=operation_settings['has_division']
                 )
             else:
-                # 根据选择的运算类型生成两个数的表达式
+                # 根据选择的运算类型和数字数量生成表达式
                 if operation_settings['has_addition']:
                     available_operations.append('addition')
                 if operation_settings['has_subtraction']:
@@ -194,14 +198,25 @@ class MathProblemGenerator:
                 if available_operations:
                     operation_type = random.choice(available_operations)
                     
-                    if operation_type == 'addition':
-                        problem = self.math_engine._generate_addition_expression()
-                    elif operation_type == 'subtraction':
-                        problem = self.math_engine._generate_subtraction_expression()
-                    elif operation_type == 'multiplication':
-                        problem = self.math_engine._generate_multiplication_expression()
-                    else:  # division
-                        problem = self.math_engine._generate_division_expression()
+                    # 如果选择3个数字，使用generate_expression方法
+                    if operation_settings['num_count'] == 3:
+                        has_multiply = operation_type in ['multiplication']
+                        has_divide = operation_type in ['division']
+                        problem = self.math_engine.generate_expression(
+                            num_count=3,
+                            has_multiply=has_multiply,
+                            has_divide=has_divide
+                        )
+                    else:
+                        # 2个数字的情况，使用原来的方法
+                        if operation_type == 'addition':
+                            problem = self.math_engine._generate_addition_expression()
+                        elif operation_type == 'subtraction':
+                            problem = self.math_engine._generate_subtraction_expression()
+                        elif operation_type == 'multiplication':
+                            problem = self.math_engine._generate_multiplication_expression()
+                        else:  # division
+                            problem = self.math_engine._generate_division_expression()
                 else:
                     problem = Constants.DEFAULT_PROBLEM
             

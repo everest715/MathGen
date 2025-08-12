@@ -46,6 +46,9 @@ class UIGenerator:
         self.has_division = tk.BooleanVar(value=False)
         self.has_mixed = tk.BooleanVar(value=False)
         
+        # 数字数量选择
+        self.num_count = tk.StringVar(value=Constants.NUM_COUNT_OPTIONS[0])
+        
         # 数字范围
         self.min_number = tk.StringVar(value=str(Constants.DEFAULT_MIN_NUMBER))
         self.max_number = tk.StringVar(value=str(Constants.DEFAULT_MAX_NUMBER))
@@ -73,6 +76,9 @@ class UIGenerator:
         
         # 题目类型选择
         self.create_problem_type_frame(main_frame)
+        
+        # 数字数量选择
+        self.create_num_count_frame(main_frame)
         
         # 数字范围设置
         self.create_number_range_frame(main_frame)
@@ -103,10 +109,19 @@ class UIGenerator:
         ttk.Checkbutton(type_frame, text="除法(带余数)", variable=self.has_division).grid(row=0, column=3, sticky=tk.W, padx=(0, 10))
         ttk.Checkbutton(type_frame, text="混合运算", variable=self.has_mixed).grid(row=0, column=4, sticky=tk.W)
     
+    def create_num_count_frame(self, parent):
+        """创建数字数量选择框架"""
+        num_count_frame = ttk.LabelFrame(parent, text="数字个数", padding="5")
+        num_count_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        ttk.Label(num_count_frame, text="数字个数:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
+        num_count_combo = ttk.Combobox(num_count_frame, textvariable=self.num_count, values=Constants.NUM_COUNT_OPTIONS, state="readonly", width=15)
+        num_count_combo.grid(row=0, column=1, sticky=tk.W)
+    
     def create_number_range_frame(self, parent):
         """创建数字范围设置框架"""
         number_frame = ttk.LabelFrame(parent, text="数字范围 (1-999)", padding="5")
-        number_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        number_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Label(number_frame, text="最小值:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
         ttk.Entry(number_frame, textvariable=self.min_number, width=10).grid(row=0, column=1, padx=(0, 20))
@@ -117,7 +132,7 @@ class UIGenerator:
     def create_result_range_frame(self, parent):
         """创建结果范围设置框架"""
         result_frame = ttk.LabelFrame(parent, text="结果范围 (1-999)", padding="5")
-        result_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        result_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Label(result_frame, text="最小值:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
         ttk.Entry(result_frame, textvariable=self.min_result, width=10).grid(row=0, column=1, padx=(0, 20))
@@ -128,7 +143,7 @@ class UIGenerator:
     def create_page_settings_frame(self, parent):
         """创建页面设置框架"""
         page_frame = ttk.LabelFrame(parent, text="页面设置", padding="5")
-        page_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        page_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Label(page_frame, text="每页行数:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
         ttk.Entry(page_frame, textvariable=self.rows_per_page, width=10).grid(row=0, column=1, padx=(0, 20))
@@ -142,7 +157,7 @@ class UIGenerator:
     def create_font_settings_frame(self, parent):
         """创建字体设置框架"""
         font_frame = ttk.LabelFrame(parent, text="字体设置", padding="5")
-        font_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        font_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Label(font_frame, text="字体大小:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
         ttk.Entry(font_frame, textvariable=self.font_size, width=10).grid(row=0, column=1)
@@ -150,14 +165,14 @@ class UIGenerator:
     def create_save_path_frame(self, parent):
         """创建保存路径设置框架"""
         path_frame = ttk.LabelFrame(parent, text="保存路径", padding="5")
-        path_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        path_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Entry(path_frame, textvariable=self.save_path, width=50).grid(row=0, column=0, padx=(0, 10))
         ttk.Button(path_frame, text="浏览", command=self.browse_save_path).grid(row=0, column=1)
     
     def create_generate_button(self, parent):
         """创建生成按钮"""
-        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=7, column=0, columnspan=2, pady=20)
     
     def browse_save_path(self):
         """浏览保存路径"""
@@ -178,6 +193,7 @@ class UIGenerator:
             'has_multiplication': self.has_multiplication.get(),
             'has_division': self.has_division.get(),
             'has_mixed': self.has_mixed.get(),
+            'num_count': self.num_count.get(),
             'min_number': self.min_number.get(),
             'max_number': self.max_number.get(),
             'min_result': self.min_result.get(),
