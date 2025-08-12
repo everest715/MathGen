@@ -83,13 +83,17 @@ class MathEngine:
                     factors.append((i, j))
         return factors
     
-    def _generate_bracket_expression(self, a, op, b, result):
+    def _generate_bracket_expression(self, a, op, b, result, bracket_pos=None):
         """生成带括号的表达式"""
-        # 随机决定哪个数字用括号
-        if random.choice([True, False]):
+        if bracket_pos is None:
+            bracket_pos = random.choice([0, 1, 2])
+        
+        if bracket_pos == 0:
             return f'(     ) {op} {b} = {result}'
-        else:
+        elif bracket_pos == 1:
             return f'{a} {op} (     ) = {result}'
+        else:
+            return f'{a} {op} {b} ='
     
     def _safe_generate_expression(self, generator_func, max_attempts=Constants.MAX_GENERATION_ATTEMPTS):
         """安全地生成表达式，带重试机制"""
