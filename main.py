@@ -157,59 +157,77 @@ class MathProblemGenerator:
             题目列表
         """
         total_problems = rows_per_page * cols_per_page * total_pages
-        
         problems = []
         
-        for i in range(total_problems):
-            # 根据选择的运算类型随机生成题目
-            available_operations = []
-            
-            if operation_settings['has_mixed']:
-                # 如果选择了混合运算，使用用户选择的数字数量
-                problem = self.math_engine.generate_expression(
-                    num_count=operation_settings['num_count'],
-                    has_multiply=operation_settings['has_multiplication'],
-                    has_divide=operation_settings['has_division']
-                )
-            else:
-                # 根据选择的运算类型和数字数量生成表达式
-                if operation_settings['has_addition']:
-                    available_operations.append('addition')
-                if operation_settings['has_subtraction']:
-                    available_operations.append('subtraction')
-                if operation_settings['has_multiplication']:
-                    available_operations.append('multiplication')
-                if operation_settings['has_division']:
-                    available_operations.append('division')
-                
-                if available_operations:
-                    operation_type = random.choice(available_operations)
-                    
-                    # 如果选择3个数字，使用generate_expression方法
-                    if operation_settings['num_count'] == 3:
-                        has_multiply = operation_type in ['multiplication']
-                        has_divide = operation_type in ['division']
-                        problem = self.math_engine.generate_expression(
-                            num_count=3,
-                            has_multiply=has_multiply,
-                            has_divide=has_divide
-                        )
-                    else:
-                        # 2个数字的情况，使用原来的方法
-                        if operation_type == 'addition':
-                            problem = self.math_engine._generate_addition_expression()
-                        elif operation_type == 'subtraction':
-                            problem = self.math_engine._generate_subtraction_expression()
-                        elif operation_type == 'multiplication':
-                            problem = self.math_engine._generate_multiplication_expression()
-                        else:  # division
-                            problem = self.math_engine._generate_division_expression()
-                else:
-                    problem = Constants.DEFAULT_PROBLEM
-            
+        # 获取可用的运算类型
+        available_operations = self._get_available_operations(operation_settings)
+        
+        for _ in range(total_problems):
+            problem = self._generate_single_problem(operation_settings, available_operations)
             problems.append(problem)
         
         return problems
+    
+    def _get_available_operations(self, operation_settings):
+        """获取可用的运算类型列表"""
+        operations = []
+        operation_map = {
+            'has_addition': 'addition',
+            'has_subtraction': 'subtraction', 
+            'has_multiplication': 'multiplication',
+            'has_division': 'division'
+        }
+        
+        for setting_key, operation_name in operation_map.items():
+            if operation_settings.get(setting_key, False):
+                operations.append(operation_name)
+        
+        return operations
+    
+    def _generate_single_problem(self, operation_settings, available_operations):
+        """生成单个题目"""
+        # 混合运算优先
+        if operation_settings.get('has_mixed', False):
+            return self.math_engine.generate_expression(
+                num_count=operation_settings['num_count'],
+                has_multiply=operation_settings.get('has_multiplication', False),
+                has_divide=operation_settings.get('has_division', False)
+            )
+        
+        # 单一运算类型
+        if not available_operations:
+            return Constants.DEFAULT_PROBLEM
+            
+        operation_type = random.choice(available_operations)
+        
+        # 三个数字的情况统一使用generate_expression
+        if operation_settings['num_count'] == 3:
+            return self._generate_three_number_problem(operation_type)
+        
+        # 两个数字的情况
+        return self._generate_two_number_problem(operation_type)
+    
+    def _generate_three_number_problem(self, operation_type):
+        """生成三个数字的题目"""
+        has_multiply = operation_type == 'multiplication'
+        has_divide = operation_type == 'division'
+        return self.math_engine.generate_expression(
+            num_count=3,
+            has_multiply=has_multiply,
+            has_divide=has_divide
+        )
+    
+    def _generate_two_number_problem(self, operation_type):
+        """生成两个数字的题目"""
+        operation_methods = {
+            'addition': self.math_engine._generate_addition_expression,
+            'subtraction': self.math_engine._generate_subtraction_expression,
+            'multiplication': self.math_engine._generate_multiplication_expression,
+            'division': self.math_engine._generate_division_expression
+        }
+        
+        method = operation_methods.get(operation_type)
+        return method() if method else Constants.DEFAULT_PROBLEM
     
     def _create_and_save_pdf(self, problems, save_filename, rows_per_page, cols_per_page, total_pages, font_size):
         """创建并保存PDF
