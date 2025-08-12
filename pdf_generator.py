@@ -22,30 +22,31 @@ class PDFGenerator:
     
     def register_fonts(self):
         """注册中文字体"""
+        # 系统字体路径配置
+        font_configs = [
+            ('C:/Windows/Fonts/simsun.ttc', 'ChineseFont'),  # Windows 宋体
+            ('C:/Windows/Fonts/simhei.ttf', 'ChineseFont'),  # Windows 黑体
+            ('C:/Windows/Fonts/msyh.ttc', 'ChineseFont'),    # Windows 微软雅黑
+            ('/System/Library/Fonts/PingFang.ttc', 'ChineseFont'),  # macOS
+            ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 'ChineseFont')  # Linux
+        ]
+        
+        self.font_name = 'Helvetica'  # 默认字体
+        
+        for font_path, font_name in font_configs:
+            if self._try_register_font(font_path, font_name):
+                self.font_name = font_name
+                break
+    
+    def _try_register_font(self, font_path, font_name):
+        """尝试注册单个字体"""
         try:
-            # 尝试注册系统中的中文字体
-            font_paths = [
-                'C:/Windows/Fonts/simsun.ttc',  # 宋体
-                'C:/Windows/Fonts/simhei.ttf',  # 黑体
-                'C:/Windows/Fonts/msyh.ttc',    # 微软雅黑
-                '/System/Library/Fonts/PingFang.ttc',  # macOS
-                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'  # Linux
-            ]
-            
-            for font_path in font_paths:
-                if os.path.exists(font_path):
-                    try:
-                        pdfmetrics.registerFont(TTFont('ChineseFont', font_path))
-                        self.font_name = 'ChineseFont'
-                        return
-                    except Exception:
-                        continue
-            
-            # 如果没有找到中文字体，使用默认字体
-            self.font_name = 'Helvetica'
-            
+            if os.path.exists(font_path):
+                pdfmetrics.registerFont(TTFont(font_name, font_path))
+                return True
         except Exception:
-            self.font_name = 'Helvetica'
+            pass
+        return False
     
     def create_pdf(self, filename, problems, cols=3, font_size=16, per_col=25):
         """创建PDF文档
@@ -125,21 +126,28 @@ class PDFGenerator:
         if save_path and save_path.strip():
             return save_path.strip()
         
-        # 根据选择的运算类型生成默认文件名
-        operation_types = []
-        if has_addition:
-            operation_types.append("加法")
-        if has_subtraction:
-            operation_types.append("减法")
-        if has_multiplication:
-            operation_types.append("乘法")
-        if has_division:
-            operation_types.append("除法")
-        if has_mixed:
-            operation_types.append("混合运算")
+        # 运算类型映射
+        operation_mapping = {
+            'has_addition': '加法',
+            'has_subtraction': '减法', 
+            'has_multiplication': '乘法',
+            'has_division': '除法',
+            'has_mixed': '混合运算'
+        }
         
-        if operation_types:
-            operation_str = "_".join(operation_types)
+        # 获取选中的运算类型
+        selected_operations = [
+            operation_mapping[key] for key, value in {
+                'has_addition': has_addition,
+                'has_subtraction': has_subtraction,
+                'has_multiplication': has_multiplication,
+                'has_division': has_division,
+                'has_mixed': has_mixed
+            }.items() if value
+        ]
+        
+        if selected_operations:
+            operation_str = "_".join(selected_operations)
             return f"数学题_{operation_str}.pdf"
         else:
             return Constants.DEFAULT_SAVE_PATH

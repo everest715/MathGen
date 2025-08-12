@@ -126,49 +126,47 @@ class UIGenerator:
         num_count_combo = ttk.Combobox(num_count_frame, textvariable=self.num_count, values=Constants.NUM_COUNT_OPTIONS, state="readonly", width=15)
         num_count_combo.grid(row=0, column=1, sticky=tk.W)
     
+    def _create_range_frame(self, parent, title, row, min_var, max_var):
+        """创建范围设置框架的通用方法"""
+        frame = ttk.LabelFrame(parent, text=title, padding="5")
+        frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        ttk.Label(frame, text="最小值:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
+        ttk.Entry(frame, textvariable=min_var, width=10).grid(row=0, column=1, padx=(0, 20))
+        
+        ttk.Label(frame, text="最大值:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
+        ttk.Entry(frame, textvariable=max_var, width=10).grid(row=0, column=3)
+        
+        return frame
+    
     def create_number_range_frame(self, parent):
         """创建数字范围设置框架"""
-        number_frame = ttk.LabelFrame(parent, text="数字范围 (1-999)", padding="5")
-        number_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
-        
-        ttk.Label(number_frame, text="最小值:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(number_frame, textvariable=self.min_number, width=10).grid(row=0, column=1, padx=(0, 20))
-        
-        ttk.Label(number_frame, text="最大值:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(number_frame, textvariable=self.max_number, width=10).grid(row=0, column=3)
+        return self._create_range_frame(parent, "数字范围 (1-999)", 2, self.min_number, self.max_number)
     
     def create_result_range_frame(self, parent):
         """创建结果范围设置框架"""
-        result_frame = ttk.LabelFrame(parent, text="结果范围 (1-999)", padding="5")
-        result_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
-        
-        ttk.Label(result_frame, text="最小值:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(result_frame, textvariable=self.min_result, width=10).grid(row=0, column=1, padx=(0, 20))
-        
-        ttk.Label(result_frame, text="最大值:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(result_frame, textvariable=self.max_result, width=10).grid(row=0, column=3)
+        return self._create_range_frame(parent, "结果范围 (1-999)", 3, self.min_result, self.max_result)
+    
+    def _create_labeled_entry(self, parent, text, variable, row, column, width=10, padx=(0, 5)):
+        """创建带标签的输入框"""
+        ttk.Label(parent, text=text).grid(row=row, column=column, sticky=tk.W, padx=padx)
+        ttk.Entry(parent, textvariable=variable, width=width).grid(row=row, column=column+1, padx=(0, 20) if column < 4 else (0, 0))
     
     def create_page_settings_frame(self, parent):
         """创建页面设置框架"""
         page_frame = ttk.LabelFrame(parent, text="页面设置", padding="5")
         page_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
-        ttk.Label(page_frame, text="每页行数:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(page_frame, textvariable=self.rows_per_page, width=10).grid(row=0, column=1, padx=(0, 20))
-        
-        ttk.Label(page_frame, text="每页列数:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(page_frame, textvariable=self.cols_per_page, width=10).grid(row=0, column=3, padx=(0, 20))
-        
-        ttk.Label(page_frame, text="总页数:").grid(row=0, column=4, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(page_frame, textvariable=self.total_pages, width=10).grid(row=0, column=5)
+        self._create_labeled_entry(page_frame, "每页行数:", self.rows_per_page, 0, 0)
+        self._create_labeled_entry(page_frame, "每页列数:", self.cols_per_page, 0, 2)
+        self._create_labeled_entry(page_frame, "总页数:", self.total_pages, 0, 4)
     
     def create_font_settings_frame(self, parent):
         """创建字体设置框架"""
         font_frame = ttk.LabelFrame(parent, text="字体设置", padding="5")
         font_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
-        ttk.Label(font_frame, text="字体大小:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
-        ttk.Entry(font_frame, textvariable=self.font_size, width=10).grid(row=0, column=1)
+        self._create_labeled_entry(font_frame, "字体大小:", self.font_size, 0, 0)
     
     def create_save_path_frame(self, parent):
         """创建保存路径设置框架"""

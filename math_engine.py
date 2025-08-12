@@ -122,6 +122,9 @@ class MathEngine:
 
     def _generate_two_number_expression(self, has_multiply, has_divide):
         """生成两个数的表达式"""
+        # 获取当前范围设置
+        min_num, max_num, min_result, max_result = self._get_user_ranges()
+        
         # 随机选择运算类型
         operation_choices = []
         if has_divide:
@@ -132,14 +135,15 @@ class MathEngine:
         
         operation = random.choice(operation_choices)
         
-        if operation == '÷':
-            return self._generate_division_expression()
-        elif operation == 'x':
-            return self._generate_multiplication_expression()
-        elif operation == '+':
-            return self._generate_addition_expression()
-        else:  # subtract
-            return self._generate_subtraction_expression()
+        # 使用统一的生成方法
+        operation_methods = {
+            '÷': self._generate_division_expression,
+            'x': self._generate_multiplication_expression,
+            '+': self._generate_addition_expression,
+            '-': self._generate_subtraction_expression
+        }
+        
+        return operation_methods[operation]()
 
     def _generate_division_expression(self):
         """生成除法表达式(带余数)"""
