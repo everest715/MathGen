@@ -39,9 +39,9 @@ class Constants:
     # ==================== 页面布局配置 ====================
     # 默认页面设置
     DEFAULT_ROWS_PER_PAGE = 25
-    DEFAULT_COLS_PER_PAGE = 3
+    DEFAULT_COLS_PER_PAGE = 4
     DEFAULT_TOTAL_PAGES = 10
-    DEFAULT_FONT_SIZE = 14
+    DEFAULT_FONT_SIZE = 12
     
     # 页面设置范围
     MIN_ROWS_PER_PAGE = 1

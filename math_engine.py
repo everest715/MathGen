@@ -151,7 +151,14 @@ class MathEngine:
         divisor = random.randint(max(2, self.min_number), min(self.max_number, 9))
         # 商在结果范围内，且不超过9
         max_quotient = min(self.max_result, 9, self.max_number // divisor if divisor > 0 else 9)
-        quotient = random.randint(max(1, self.min_result), max_quotient)
+        min_quotient = max(1, self.min_result)
+        
+        # 确保范围有效
+        if min_quotient > max_quotient:
+            # 如果范围无效，使用安全的默认值
+            quotient = random.randint(1, min(9, self.max_result))
+        else:
+            quotient = random.randint(min_quotient, max_quotient)
         # 余数小于除数
         remainder = random.randint(0, divisor - 1)
         dividend = quotient * divisor + remainder
@@ -259,16 +266,31 @@ class MathEngine:
                 b = random.randint(max(2, self.min_number), min(self.max_number, 9))
                 # 确保商不超过9
                 max_quotient = min(self.max_result, 9, self.max_number // b if b > 0 else 9)
-                quotient = random.randint(max(1, self.min_result), max_quotient)
+                min_quotient = max(1, self.min_result)
+                
+                # 确保范围有效
+                if min_quotient > max_quotient:
+                    # 如果范围无效，使用安全的默认值
+                    quotient = random.randint(1, min(9, self.max_result))
+                else:
+                    quotient = random.randint(min_quotient, max_quotient)
                 a = b * quotient
                 temp_result = quotient
             
             # 基于乘除法结果生成加减法
             if op2 == '+':
-                c = random.randint(self.min_number, min(self.max_number, self.max_result - temp_result))
+                max_c = min(self.max_number, self.max_result - temp_result)
+                if self.min_number <= max_c:
+                    c = random.randint(self.min_number, max_c)
+                else:
+                    c = self._generate_safe_random(self.min_number, self.max_number)
             else:  # op2 == '-'
                 # 确保最终结果为正数
-                c = random.randint(self.min_number, min(self.max_number, temp_result - self.min_result))
+                max_c = min(self.max_number, temp_result - self.min_result)
+                if self.min_number <= max_c:
+                    c = random.randint(self.min_number, max_c)
+                else:
+                    c = self._generate_safe_random(self.min_number, self.max_number)
         
         elif op2 in ['x', '÷']:
             # 第二个是乘除法，第一个是加减法
@@ -280,25 +302,48 @@ class MathEngine:
                 
                 # 基于乘法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(self.min_number, min(self.max_number, self.max_result - multiplication_result))
+                    max_a = min(self.max_number, self.max_result - multiplication_result)
+                    if self.min_number <= max_a:
+                        a = random.randint(self.min_number, max_a)
+                    else:
+                        a = self._generate_safe_random(self.min_number, self.max_number)
                 else:  # op1 == '-'
                     # 确保a - (b * c) > 0
-                    a = random.randint(max(self.min_number, multiplication_result + self.min_result), self.max_number)
+                    min_a = max(self.min_number, multiplication_result + self.min_result)
+                    if min_a <= self.max_number:
+                        a = random.randint(min_a, self.max_number)
+                    else:
+                        a = self._generate_safe_random(self.min_number, self.max_number)
             
             else:  # op2 == '÷'
                 # 先生成除法部分
                 c = random.randint(max(2, self.min_number), min(self.max_number, 9))
                 # 确保商不超过9
                 max_quotient = min(self.max_result, 9, self.max_number // c if c > 0 else 9)
-                quotient = random.randint(max(1, self.min_result), max_quotient)
+                min_quotient = max(1, self.min_result)
+                
+                # 确保范围有效
+                if min_quotient > max_quotient:
+                    # 如果范围无效，使用安全的默认值
+                    quotient = random.randint(1, min(9, self.max_result))
+                else:
+                    quotient = random.randint(min_quotient, max_quotient)
                 b = c * quotient  # 被除数
                 
                 # 基于除法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(self.min_number, min(self.max_number, self.max_result - quotient))
+                    max_a = min(self.max_number, self.max_result - quotient)
+                    if self.min_number <= max_a:
+                        a = random.randint(self.min_number, max_a)
+                    else:
+                        a = self._generate_safe_random(self.min_number, self.max_number)
                 else:  # op1 == '-'
                     # 确保a - (b ÷ c) > 0
-                    a = random.randint(max(self.min_number, quotient + self.min_result), self.max_number)
+                    min_a = max(self.min_number, quotient + self.min_result)
+                    if min_a <= self.max_number:
+                        a = random.randint(min_a, self.max_number)
+                    else:
+                        a = self._generate_safe_random(self.min_number, self.max_number)
         
         # 计算最终结果
         if op1 == 'x':
