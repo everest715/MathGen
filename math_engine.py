@@ -240,70 +240,74 @@ class MathEngine:
 
     def _generate_mixed_operation_expression(self, op1, op2):
         """生成包含乘除法的混合运算表达式"""
-        min_num, max_num, min_result, max_result = self._get_user_ranges()
-        
         # 确定哪个运算符是乘除法，优先处理乘除法
         if op1 in ['x', '÷']:
             # 第一个是乘除法，第二个是加减法
             if op1 == 'x':
-                a = random.randint(max(2, min_num), min(max_num, 9))
-                b = random.randint(max(2, min_num), min(max_num, 9))
+                a = random.randint(max(2, self.min_number), min(self.max_number, 9))
+                b = random.randint(max(2, self.min_number), min(self.max_number, 9))
                 temp_result = a * b
             else:  # op1 == '÷'
-                b = random.randint(max(2, min_num), min(max_num, 9))
-                quotient = random.randint(max(1, min_result), min(max_result, max_num // b))
+                b = random.randint(max(2, self.min_number), min(self.max_number, 9))
+                quotient = random.randint(max(1, self.min_result), min(self.max_result, self.max_number // b))
                 a = b * quotient
                 temp_result = quotient
             
             # 基于乘除法结果生成加减法
             if op2 == '+':
-                c = random.randint(min_num, min(max_num, max_result - temp_result))
+                c = random.randint(self.min_number, min(self.max_number, self.max_result - temp_result))
             else:  # op2 == '-'
                 # 确保最终结果为正数
-                c = random.randint(min_num, min(max_num, temp_result - min_result))
+                c = random.randint(self.min_number, min(self.max_number, temp_result - self.min_result))
         
         elif op2 in ['x', '÷']:
             # 第二个是乘除法，第一个是加减法
             if op2 == 'x':
                 # 先生成乘法部分
-                b = random.randint(max(2, min_num), min(max_num, 9))
-                c = random.randint(max(2, min_num), min(max_num, 9))
+                b = random.randint(max(2, self.min_number), min(self.max_number, 9))
+                c = random.randint(max(2, self.min_number), min(self.max_number, 9))
                 multiplication_result = b * c
                 
                 # 基于乘法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(min_num, min(max_num, max_result - multiplication_result))
+                    a = random.randint(self.min_number, min(self.max_number, self.max_result - multiplication_result))
                 else:  # op1 == '-'
                     # 确保a - (b * c) > 0
-                    a = random.randint(max(min_num, multiplication_result + min_result), max_num)
+                    a = random.randint(max(self.min_number, multiplication_result + self.min_result), self.max_number)
             
             else:  # op2 == '÷'
                 # 先生成除法部分
-                c = random.randint(max(2, min_num), min(max_num, 9))
-                quotient = random.randint(max(1, min_result), min(max_result, max_num // c))
+                c = random.randint(max(2, self.min_number), min(self.max_number, 9))
+                quotient = random.randint(max(1, self.min_result), min(self.max_result, self.max_number // c))
                 b = c * quotient  # 被除数
                 
                 # 基于除法结果生成加减法
                 if op1 == '+':
-                    a = random.randint(min_num, min(max_num, max_result - quotient))
+                    a = random.randint(self.min_number, min(self.max_number, self.max_result - quotient))
                 else:  # op1 == '-'
-                    # 确保a - quotient > 0
-                    a = random.randint(max(min_num, quotient + min_result), max_num)
+                    # 确保a - (b ÷ c) > 0
+                    a = random.randint(max(self.min_number, quotient + self.min_result), self.max_number)
         
-        else:
-            # 这种情况不应该出现在混合运算中，因为至少要有一个乘除法
-            raise ValueError("混合运算表达式必须包含至少一个乘除法运算符")
+        # 计算最终结果
+        if op1 == 'x':
+            temp = a * b
+        elif op1 == '÷':
+            temp = a // b
+        elif op1 == '+':
+            temp = a + (b * c if op2 == 'x' else b // c)
+        else:  # op1 == '-'
+            temp = a - (b * c if op2 == 'x' else b // c)
+        
+        if op2 == 'x':
+            final_result = temp + b * c if op1 in ['+', '-'] else (a * b) + c if op1 == 'x' else (a // b) + c
+        elif op2 == '÷':
+            final_result = temp + b // c if op1 in ['+', '-'] else (a * b) + (b // c) if op1 == 'x' else (a // b) + (b // c)
+        elif op2 == '+':
+            final_result = temp + c
+        else:  # op2 == '-'
+            final_result = temp - c
         
         return f'{a} {op1} {b} {op2} {c} ='
-        
-        # 随机选择哪个位置放括号
-        bracket_pos = random.choice([0, 1, 2])
-        if bracket_pos == 0:
-            return f'(     ) {op1} {b} {op2} {c} = {final_result}'
-        elif bracket_pos == 1:
-            return f'{a} {op1} (     ) {op2} {c} = {final_result}'
-        else:
-            return f'{a} {op1} {b} {op2} (     ) = {final_result}'
 
     def _generate_addition_subtraction_expression(self, op1, op2):
         """生成纯加减法的三个数表达式"""
@@ -351,11 +355,4 @@ class MathEngine:
                 a = random.randint(min_a, self.max_number)
             result = a - b - c
         
-        # 随机选择哪个位置放括号
-        bracket_pos = random.choice([0, 1, 2])
-        if bracket_pos == 0:
-            return f'(     ) {op1} {b} {op2} {c} = {result}'
-        elif bracket_pos == 1:
-            return f'{a} {op1} (     ) {op2} {c} = {result}'
-        else:
-            return f'{a} {op1} {b} {op2} (     ) = {result}'
+        return f'{a} {op1} {b} {op2} {c} ='
