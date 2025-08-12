@@ -147,19 +147,22 @@ class MathEngine:
 
     def _generate_division_expression(self):
         """生成除法表达式(带余数)"""
-        # 除数在数字范围内
-        divisor = random.randint(max(2, self.min_number), min(self.max_number, 9))  # 限制除数不要太大
-        # 商在结果范围内
-        quotient = random.randint(self.min_result, min(self.max_result, self.max_number // divisor))
+        # 除数在数字范围内，且不超过9
+        divisor = random.randint(max(2, self.min_number), min(self.max_number, 9))
+        # 商在结果范围内，且不超过9
+        max_quotient = min(self.max_result, 9, self.max_number // divisor if divisor > 0 else 9)
+        quotient = random.randint(max(1, self.min_result), max_quotient)
         # 余数小于除数
         remainder = random.randint(0, divisor - 1)
         dividend = quotient * divisor + remainder
         
         # 确保被除数在数字范围内
         if dividend > self.max_number:
-            dividend = self.max_number
-            quotient = dividend // divisor
-            remainder = dividend % divisor
+            # 重新计算，确保所有数字都在合理范围内
+            max_quotient = min(9, self.max_number // divisor)
+            quotient = random.randint(1, max_quotient)
+            remainder = random.randint(0, min(divisor - 1, self.max_number - quotient * divisor))
+            dividend = quotient * divisor + remainder
 
         return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}')
 
@@ -173,9 +176,10 @@ class MathEngine:
         
         # 确保结果在范围内
         if result < self.min_result or result > self.max_result:
-            # 重新生成较小的数
-            a = random.randint(2, min(5, self.max_number))
-            b = random.randint(2, min(self.max_result // a, self.max_number))
+            # 重新生成较小的数，确保两个乘数都不超过9
+            a = random.randint(2, min(5, self.max_number, 9))
+            max_b_for_result = min(self.max_result // a, self.max_number, 9) if a > 0 else 9
+            b = random.randint(2, max_b_for_result)
             result = a * b
             
         return self._generate_bracket_expression(a, 'x', b, result)
@@ -253,7 +257,9 @@ class MathEngine:
                 temp_result = a * b
             else:  # op1 == '÷'
                 b = random.randint(max(2, self.min_number), min(self.max_number, 9))
-                quotient = random.randint(max(1, self.min_result), min(self.max_result, self.max_number // b))
+                # 确保商不超过9
+                max_quotient = min(self.max_result, 9, self.max_number // b if b > 0 else 9)
+                quotient = random.randint(max(1, self.min_result), max_quotient)
                 a = b * quotient
                 temp_result = quotient
             
@@ -282,7 +288,9 @@ class MathEngine:
             else:  # op2 == '÷'
                 # 先生成除法部分
                 c = random.randint(max(2, self.min_number), min(self.max_number, 9))
-                quotient = random.randint(max(1, self.min_result), min(self.max_result, self.max_number // c))
+                # 确保商不超过9
+                max_quotient = min(self.max_result, 9, self.max_number // c if c > 0 else 9)
+                quotient = random.randint(max(1, self.min_result), max_quotient)
                 b = c * quotient  # 被除数
                 
                 # 基于除法结果生成加减法
