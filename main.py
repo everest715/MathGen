@@ -114,18 +114,7 @@ class MathProblemGenerator:
             if not (Constants.MIN_RANGE_VALUE <= max_result <= Constants.MAX_RANGE_VALUE):
                 return False, f"最大结果必须在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间"
             
-            # 验证PDF设置
-            rows_per_page = int(settings['rows_per_page'])
-            cols_per_page = int(settings['cols_per_page'])
-            total_pages = int(settings['total_pages'])
-            font_size = int(settings['font_size'])
-            
-            is_pdf_valid, pdf_error = self.pdf_generator.validate_pdf_settings(
-                rows_per_page, cols_per_page, total_pages, font_size
-            )
-            
-            if not is_pdf_valid:
-                return False, pdf_error
+            # PDF设置验证已移除，新的create_pdf函数会自动处理
             
             return True, ""
             
@@ -167,9 +156,7 @@ class MathProblemGenerator:
         返回:
             题目列表
         """
-        total_problems = self.pdf_generator.calculate_total_problems(
-            rows_per_page, cols_per_page, total_pages
-        )
+        total_problems = rows_per_page * cols_per_page * total_pages
         
         problems = []
         
@@ -235,17 +222,14 @@ class MathProblemGenerator:
             total_pages: 总页数
             font_size: 字体大小
         """
-        success = self.pdf_generator.create_pdf(
-            problems,
+        # 使用新的create_pdf函数签名
+        self.pdf_generator.create_pdf(
             save_filename,
-            rows_per_page,
-            cols_per_page,
-            total_pages,
-            font_size
+            problems,
+            cols=cols_per_page,
+            font_size=font_size,
+            per_col=rows_per_page
         )
-        
-        if not success:
-            raise Exception("PDF创建失败")
 
 def main():
     """主函数"""
