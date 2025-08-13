@@ -9,7 +9,7 @@ from constants import Constants
 class MathEngine:
     """数学表达式生成引擎"""
     
-    def __init__(self, min_number=None, max_number=None, min_result=None, max_result=None):
+    def __init__(self, min_number=None, max_number=None, min_result=None, max_result=None, allow_right_bracket=False):
         """初始化数学引擎
         
         参数:
@@ -17,11 +17,13 @@ class MathEngine:
             max_number: 最大数字值
             min_result: 最小结果值
             max_result: 最大结果值
+            allow_right_bracket: 是否允许括号出现在等号右边
         """
         self.min_number = min_number or Constants.DEFAULT_MIN_NUMBER
         self.max_number = max_number or Constants.DEFAULT_MAX_NUMBER
         self.min_result = min_result or Constants.DEFAULT_MIN_RESULT
         self.max_result = max_result or Constants.DEFAULT_MAX_RESULT
+        self.allow_right_bracket = allow_right_bracket
         
         # 确保范围合理
         if self.min_number > self.max_number:
@@ -29,12 +31,14 @@ class MathEngine:
         if self.min_result > self.max_result:
             self.min_result, self.max_result = self.max_result, self.min_result
     
-    def update_ranges(self, min_number, max_number, min_result, max_result):
+    def update_ranges(self, min_number, max_number, min_result, max_result, allow_right_bracket=None):
         """更新数字和结果范围"""
         self.min_number = min_number
         self.max_number = max_number
         self.min_result = min_result
         self.max_result = max_result
+        if allow_right_bracket is not None:
+            self.allow_right_bracket = allow_right_bracket
         
         # 确保范围合理
         if self.min_number > self.max_number:
@@ -83,17 +87,23 @@ class MathEngine:
                     factors.append((i, j))
         return factors
     
-    def _generate_bracket_expression(self, a, op, b, result, bracket_pos=None):
+    def _generate_bracket_expression(self, a, op, b, result, bracket_pos=None, allow_right_bracket=False):
         """生成带括号的表达式"""
         if bracket_pos is None:
-            bracket_pos = random.choice([0, 1, 2])
+            # 根据allow_right_bracket参数决定可选的括号位置
+            if allow_right_bracket:
+                bracket_pos = random.choice([0, 1, 2, 3])  # 0,1,2为左边括号，3为右边括号
+            else:
+                bracket_pos = random.choice([0, 1, 2])  # 只允许左边括号
         
         if bracket_pos == 0:
             return f'(     ) {op} {b} = {result}'
         elif bracket_pos == 1:
             return f'{a} {op} (     ) = {result}'
-        else:
+        elif bracket_pos == 2:
             return f'{a} {op} {b} ='
+        else:  # bracket_pos == 3，右边括号
+            return f'{a} {op} {b} = (     )'
     
     def _safe_generate_expression(self, generator_func, max_attempts=Constants.MAX_GENERATION_ATTEMPTS):
         """安全地生成表达式，带重试机制"""
@@ -171,7 +181,7 @@ class MathEngine:
             remainder = random.randint(0, min(divisor - 1, self.max_number - quotient * divisor))
             dividend = quotient * divisor + remainder
 
-        return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}')
+        return self._generate_bracket_expression(dividend, '÷', divisor, f'{quotient}...{remainder}', allow_right_bracket=self.allow_right_bracket)
 
     def _generate_multiplication_expression(self):
         """生成乘法表达式"""
@@ -189,7 +199,7 @@ class MathEngine:
             b = random.randint(2, max_b_for_result)
             result = a * b
             
-        return self._generate_bracket_expression(a, 'x', b, result)
+        return self._generate_bracket_expression(a, 'x', b, result, allow_right_bracket=self.allow_right_bracket)
 
     def _generate_addition_expression(self):
         """生成加法表达式"""
@@ -203,7 +213,7 @@ class MathEngine:
         b = self._generate_safe_random(self.min_number, max_b)
         result = a + b
         
-        return self._generate_bracket_expression(a, '+', b, result)
+        return self._generate_bracket_expression(a, '+', b, result, allow_right_bracket=self.allow_right_bracket)
 
     def _generate_subtraction_expression(self):
         """生成减法表达式(确保结果为正)"""
@@ -225,7 +235,7 @@ class MathEngine:
                 b = self._generate_safe_random(self.min_number, self.max_number - result)
                 a = result + b
                 
-        return self._generate_bracket_expression(a, '-', b, result)
+        return self._generate_bracket_expression(a, '-', b, result, allow_right_bracket=self.allow_right_bracket)
 
     def _generate_three_number_expression(self, has_multiply, has_divide):
         """生成三个数的表达式"""

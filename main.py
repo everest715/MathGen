@@ -48,7 +48,8 @@ class MathProblemGenerator:
                 int(settings['min_number']),
                 int(settings['max_number']),
                 int(settings['min_result']),
-                int(settings['max_result'])
+                int(settings['max_result']),
+                settings['allow_right_bracket']
             )
             
             # 生成题目
