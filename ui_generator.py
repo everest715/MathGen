@@ -65,6 +65,9 @@ class UIGenerator:
         # 字体大小
         self.font_size = tk.StringVar(value=str(Constants.DEFAULT_FONT_SIZE))
         
+        # 括号位置设置
+        self.allow_right_bracket = tk.BooleanVar(value=False)
+        
         # 保存路径
         self.save_path = tk.StringVar(value=Constants.DEFAULT_SAVE_PATH)
     
@@ -99,6 +102,9 @@ class UIGenerator:
         
         # 字体设置
         self.create_font_settings_frame(main_frame)
+        
+        # 括号设置
+        self.create_bracket_settings_frame(main_frame)
         
         # 保存路径设置
         self.create_save_path_frame(main_frame)
@@ -168,17 +174,24 @@ class UIGenerator:
         
         self._create_labeled_entry(font_frame, "字体大小:", self.font_size, 0, 0)
     
+    def create_bracket_settings_frame(self, parent):
+        """创建括号设置框架"""
+        bracket_frame = ttk.LabelFrame(parent, text="括号设置", padding="5")
+        bracket_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        ttk.Checkbutton(bracket_frame, text="允许括号出现在等号右边", variable=self.allow_right_bracket).grid(row=0, column=0, sticky=tk.W)
+    
     def create_save_path_frame(self, parent):
         """创建保存路径设置框架"""
         path_frame = ttk.LabelFrame(parent, text="保存路径", padding="5")
-        path_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        path_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Entry(path_frame, textvariable=self.save_path, width=50).grid(row=0, column=0, padx=(0, 10))
         ttk.Button(path_frame, text="浏览", command=self.browse_save_path).grid(row=0, column=1)
     
     def create_generate_button(self, parent):
         """创建生成按钮"""
-        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=7, column=0, columnspan=2, pady=20)
+        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=8, column=0, columnspan=2, pady=20)
     
     def browse_save_path(self):
         """浏览保存路径"""
@@ -208,6 +221,7 @@ class UIGenerator:
             'cols_per_page': self.cols_per_page.get(),
             'total_pages': self.total_pages.get(),
             'font_size': self.font_size.get(),
+            'allow_right_bracket': self.allow_right_bracket.get(),
             'save_path': self.save_path.get()
         }
     
