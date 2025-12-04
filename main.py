@@ -13,7 +13,7 @@ from pdf_generator import PDFGenerator
 
 
 class MathProblemGenerator:
-    """数学题生成器主类 - 协调UI、数学引擎和PDF生成器"""
+    """数学题生成器主类。"""
     
     def __init__(self):
         """初始化"""

@@ -38,7 +38,7 @@ class MathEngine:
         self._normalize_ranges()
     
     def _normalize_ranges(self) -> None:
-        """规范化范围，确保最小值不大于最大值"""
+        """规范化范围。"""
         if self.min_number > self.max_number:
             self.min_number, self.max_number = self.max_number, self.min_number
         if self.min_result > self.max_result:
@@ -50,15 +50,7 @@ class MathEngine:
                      min_result: int, 
                      max_result: int, 
                      allow_right_bracket: Optional[bool] = None) -> None:
-        """更新数字和结果范围
-        
-        Args:
-            min_number: 新的最小数字值
-            max_number: 新的最大数字值
-            min_result: 新的最小结果值
-            max_result: 新的最大结果值
-            allow_right_bracket: 是否允许等号右边括号（可选）
-        """
+        """更新数字和结果范围。"""
         self.min_number = min_number
         self.max_number = max_number
         self.min_result = min_result
