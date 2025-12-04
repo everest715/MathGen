@@ -11,6 +11,7 @@ from reportlab.lib.units import mm, inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Preformatted, BaseDocTemplate, Frame, PageTemplate
 import os
+from typing import Optional
 from constants import Constants
 
 class PDFGenerator:
@@ -109,10 +110,16 @@ class PDFGenerator:
     
 
     
-    def get_save_filename(self, save_path, has_addition, has_subtraction, has_multiplication, has_division, has_mixed):
+    def get_save_filename(self, 
+                         save_path: Optional[str], 
+                         has_addition: bool, 
+                         has_subtraction: bool, 
+                         has_multiplication: bool, 
+                         has_division: bool, 
+                         has_mixed: bool) -> str:
         """生成保存文件名
         
-        参数:
+        Args:
             save_path: 用户指定的保存路径
             has_addition: 是否包含加法
             has_subtraction: 是否包含减法
@@ -120,9 +127,16 @@ class PDFGenerator:
             has_division: 是否包含除法
             has_mixed: 是否包含混合运算
             
-        返回:
+        Returns:
             最终的保存文件名
+            
+        Example:
+            >>> generator = PDFGenerator()
+            >>> filename = generator.get_save_filename(None, True, True, False, False, False)
+            >>> "数学题_加法_减法.pdf" in filename
+            True
         """
+        # 如果用户指定了路径，直接使用
         if save_path and save_path.strip():
             return save_path.strip()
         
@@ -136,18 +150,24 @@ class PDFGenerator:
         }
         
         # 获取选中的运算类型
-        selected_operations = [
-            operation_mapping[key] for key, value in {
-                'has_addition': has_addition,
-                'has_subtraction': has_subtraction,
-                'has_multiplication': has_multiplication,
-                'has_division': has_division,
-                'has_mixed': has_mixed
-            }.items() if value
-        ]
+        selected_operations = []
+        operation_settings = {
+            'has_addition': has_addition,
+            'has_subtraction': has_subtraction,
+            'has_multiplication': has_multiplication,
+            'has_division': has_division,
+            'has_mixed': has_mixed
+        }
         
+        for key, enabled in operation_settings.items():
+            if enabled:
+                selected_operations.append(operation_mapping[key])
+        
+        # 生成文件名
         if selected_operations:
             operation_str = "_".join(selected_operations)
-            return f"数学题_{operation_str}.pdf"
+            filename = f"数学题_{operation_str}.pdf"
         else:
-            return Constants.DEFAULT_SAVE_PATH
+            filename = Constants.DEFAULT_SAVE_PATH
+        
+        return filename
