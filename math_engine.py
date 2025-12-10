@@ -18,7 +18,8 @@ class MathEngine:
                  max_number: Optional[int] = None, 
                  min_result: Optional[int] = None, 
                  max_result: Optional[int] = None, 
-                 allow_right_bracket: bool = False) -> None:
+                 allow_right_bracket: bool = False,
+                 reduce_round_tens: bool = False) -> None:
         """初始化数学引擎
         
         Args:
@@ -27,12 +28,14 @@ class MathEngine:
             min_result: 最小结果值（默认值：Constants.DEFAULT_MIN_RESULT）
             max_result: 最大结果值（默认值：Constants.DEFAULT_MAX_RESULT）
             allow_right_bracket: 是否允许括号出现在等号右边（默认值：False）
+            reduce_round_tens: 是否减少整十数字在加减法中的出现（默认值：False）
         """
         self.min_number: int = min_number or Constants.DEFAULT_MIN_NUMBER
         self.max_number: int = max_number or Constants.DEFAULT_MAX_NUMBER
         self.min_result: int = min_result or Constants.DEFAULT_MIN_RESULT
         self.max_result: int = max_result or Constants.DEFAULT_MAX_RESULT
         self.allow_right_bracket: bool = allow_right_bracket
+        self.reduce_round_tens: bool = reduce_round_tens
         
         # 确保范围合理
         self._normalize_ranges()
@@ -49,7 +52,8 @@ class MathEngine:
                      max_number: int, 
                      min_result: int, 
                      max_result: int, 
-                     allow_right_bracket: Optional[bool] = None) -> None:
+                     allow_right_bracket: Optional[bool] = None,
+                     reduce_round_tens: Optional[bool] = None) -> None:
         """更新数字和结果范围。"""
         self.min_number = min_number
         self.max_number = max_number
@@ -57,6 +61,8 @@ class MathEngine:
         self.max_result = max_result
         if allow_right_bracket is not None:
             self.allow_right_bracket = allow_right_bracket
+        if reduce_round_tens is not None:
+            self.reduce_round_tens = reduce_round_tens
         
         self._normalize_ranges()
     
@@ -70,6 +76,38 @@ class MathEngine:
                 return random.randint(fallback_min, fallback_max)
         except ValueError:
             return random.randint(fallback_min, fallback_max)
+    
+    def _generate_random_with_round_tens_control(self, min_val: int, max_val: int, 
+                                                reduce_round_tens: bool = False,
+                                                max_attempts: int = 10) -> int:
+        """生成随机数，可选择性地减少整十数字的出现概率
+        
+        Args:
+            min_val: 最小值
+            max_val: 最大值
+            reduce_round_tens: 是否减少整十数字（10、20、30等）的出现
+            max_attempts: 最大尝试次数
+            
+        Returns:
+            生成的随机数
+        """
+        for attempt in range(max_attempts):
+            value = self._generate_safe_random(min_val, max_val)
+            
+            # 如果不需要减少整十数字，直接返回
+            if not reduce_round_tens:
+                return value
+            
+            # 检查是否为整十数字（10、20、30等）
+            if value % 10 == 0 and value != 0:
+                # 以50%的概率重新生成（可以根据需要调整这个概率）
+                if random.random() < 0.5 and attempt < max_attempts - 1:
+                    continue
+            
+            return value
+        
+        # 如果多次尝试后仍然得到整十数字，就接受它
+        return value
     
     def _is_valid_expression_result(self, result: int) -> bool:
         """验证表达式结果是否在有效范围内"""
@@ -276,11 +314,17 @@ class MathEngine:
         
         # 如果仍然无效，使用备用方案
         if min_a > max_a:
-            a = self._generate_safe_random(self.min_number, self.max_number)
-            b = self._generate_safe_random(self.min_number, self.max_number)
+            a = self._generate_random_with_round_tens_control(
+                self.min_number, self.max_number, self.reduce_round_tens
+            )
+            b = self._generate_random_with_round_tens_control(
+                self.min_number, self.max_number, self.reduce_round_tens
+            )
             result = a + b
         else:
-            a = self._generate_safe_random(min_a, max_a)
+            a = self._generate_random_with_round_tens_control(
+                min_a, max_a, self.reduce_round_tens
+            )
             b = result - a
         
         expression = self._generate_bracket_expression(a, '+', b, result)
@@ -304,7 +348,9 @@ class MathEngine:
         
         # 生成减数b
         if max_b_possible >= self.min_number:
-            b = self._generate_safe_random(self.min_number, max_b_possible)
+            b = self._generate_random_with_round_tens_control(
+                self.min_number, max_b_possible, self.reduce_round_tens
+            )
         else:
             # 如果无法满足条件，使用最小值
             b = self.min_number
@@ -315,8 +361,12 @@ class MathEngine:
         # 验证结果
         if not (self.min_number <= a <= self.max_number and self.min_result <= result <= self.max_result):
             # 如果验证失败，使用备用方案
-            a = self._generate_safe_random(self.min_number, self.max_number)
-            b = self._generate_safe_random(self.min_number, a)
+            a = self._generate_random_with_round_tens_control(
+                self.min_number, self.max_number, self.reduce_round_tens
+            )
+            b = self._generate_random_with_round_tens_control(
+                self.min_number, a, self.reduce_round_tens
+            )
             result = a - b
                 
         expression = self._generate_bracket_expression(a, '-', b, result)

@@ -68,6 +68,9 @@ class UIGenerator:
         # 括号位置设置
         self.allow_right_bracket = tk.BooleanVar(value=False)
         
+        # 减少整十数字设置（仅加减法有效）
+        self.reduce_round_tens = tk.BooleanVar(value=False)
+        
         # 保存路径
         self.save_path = tk.StringVar(value=Constants.DEFAULT_SAVE_PATH)
     
@@ -105,6 +108,9 @@ class UIGenerator:
         
         # 括号设置
         self.create_bracket_settings_frame(main_frame)
+        
+        # 整十数字设置
+        self.create_round_tens_settings_frame(main_frame)
         
         # 保存路径设置
         self.create_save_path_frame(main_frame)
@@ -181,17 +187,25 @@ class UIGenerator:
         
         ttk.Checkbutton(bracket_frame, text="允许括号出现在等号右边", variable=self.allow_right_bracket).grid(row=0, column=0, sticky=tk.W)
     
+    def create_round_tens_settings_frame(self, parent):
+        """创建整十数字设置框架"""
+        round_tens_frame = ttk.LabelFrame(parent, text="整十数字设置", padding="5")
+        round_tens_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        ttk.Checkbutton(round_tens_frame, text="减少整十数字（10、20、30等）在加减法中的出现", 
+                       variable=self.reduce_round_tens).grid(row=0, column=0, sticky=tk.W)
+    
     def create_save_path_frame(self, parent):
         """创建保存路径设置框架"""
         path_frame = ttk.LabelFrame(parent, text="保存路径", padding="5")
-        path_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        path_frame.grid(row=8, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Entry(path_frame, textvariable=self.save_path, width=50).grid(row=0, column=0, padx=(0, 10))
         ttk.Button(path_frame, text="浏览", command=self.browse_save_path).grid(row=0, column=1)
     
     def create_generate_button(self, parent):
         """创建生成按钮"""
-        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=8, column=0, columnspan=2, pady=20)
+        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=9, column=0, columnspan=2, pady=20)
     
     def browse_save_path(self):
         """浏览保存路径"""
@@ -222,6 +236,7 @@ class UIGenerator:
             'total_pages': self.total_pages.get(),
             'font_size': self.font_size.get(),
             'allow_right_bracket': self.allow_right_bracket.get(),
+            'reduce_round_tens': self.reduce_round_tens.get(),
             'save_path': self.save_path.get()
         }
     

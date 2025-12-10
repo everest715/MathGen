@@ -95,7 +95,8 @@ class MathProblemGenerator:
             # 更新数学引擎范围
             self.math_engine.update_ranges(
                 min_number, max_number, min_result, max_result,
-                settings['allow_right_bracket']
+                settings['allow_right_bracket'],
+                settings['reduce_round_tens']
             )
             
             return True, ""
