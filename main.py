@@ -6,6 +6,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from typing import Dict, List
+import random
 from constants import Constants
 from ui_generator import UIGenerator
 from math_engine import MathEngine

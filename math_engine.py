@@ -248,44 +248,76 @@ class MathEngine:
         return expression
     
     def _generate_addition_expression(self) -> str:
-        """生成加法表达式"""
-        # 生成两个加数，确保和在结果范围内
-        a = self._generate_safe_random(self.min_number, self.max_number)
-        max_b = min(self.max_number, self.max_result - a)
+        """生成加法表达式（优化分布）"""
+        # 先随机选择结果，确保结果在范围内均匀分布
+        min_result_possible = max(self.min_result, self.min_number * 2)
+        max_result_possible = min(self.max_result, self.max_number * 2)
         
-        if max_b < self.min_number:
-            # 如果无法满足条件，调整a
-            a = self._generate_safe_random(self.min_number, self.max_result - self.min_number)
-            max_b = min(self.max_number, self.max_result - a)
+        # 确保范围有效
+        if min_result_possible > max_result_possible:
+            min_result_possible = self.min_result
+            max_result_possible = self.max_result
         
-        b = self._generate_safe_random(self.min_number, max_b)
-        result = a + b
+        result = self._generate_safe_random(min_result_possible, max_result_possible)
+        
+        # 根据结果生成a，确保a在有效范围内
+        min_a = max(self.min_number, result - self.max_number)
+        max_a = min(self.max_number, result - self.min_number)
+        
+        # 确保范围有效
+        if min_a > max_a:
+            # 如果无法满足条件，调整结果
+            result = self._generate_safe_random(
+                max(self.min_result, self.min_number * 2),
+                min(self.max_result, self.max_number * 2)
+            )
+            min_a = max(self.min_number, result - self.max_number)
+            max_a = min(self.max_number, result - self.min_number)
+        
+        # 如果仍然无效，使用备用方案
+        if min_a > max_a:
+            a = self._generate_safe_random(self.min_number, self.max_number)
+            b = self._generate_safe_random(self.min_number, self.max_number)
+            result = a + b
+        else:
+            a = self._generate_safe_random(min_a, max_a)
+            b = result - a
         
         expression = self._generate_bracket_expression(a, '+', b, result)
         return expression
     
     def _generate_subtraction_expression(self) -> str:
-        """生成减法表达式(确保结果为正)"""
-        # 生成被减数和减数，确保差在结果范围内且为正
+        """生成减法表达式（优化分布）"""
+        # 先随机选择结果，确保结果在范围内均匀分布
         result = self._generate_safe_random(self.min_result, self.max_result)
-        b = self._generate_safe_random(self.min_number, self.max_number)
+        
+        # 生成减数b，确保被减数a在数字范围内
+        max_b_possible = self.max_number - result
+        
+        if max_b_possible < self.min_number:
+            # 如果当前结果太大，重新生成较小的结果
+            result = self._generate_safe_random(
+                self.min_result, 
+                min(self.max_result, self.max_number - self.min_number)
+            )
+            max_b_possible = self.max_number - result
+        
+        # 生成减数b
+        if max_b_possible >= self.min_number:
+            b = self._generate_safe_random(self.min_number, max_b_possible)
+        else:
+            # 如果无法满足条件，使用最小值
+            b = self.min_number
+        
+        # 计算被减数a
         a = result + b
         
-        # 确保被减数在数字范围内
-        if a > self.max_number:
-            # 调整减数
-            max_b = min(self.max_number, self.max_number - result)
-            if max_b >= self.min_number:
-                b = self._generate_safe_random(self.min_number, max_b)
-                a = result + b
-            else:
-                # 重新生成较小的结果
-                result = self._generate_safe_random(
-                    self.min_result, 
-                    min(self.max_result, self.max_number - self.min_number)
-                )
-                b = self._generate_safe_random(self.min_number, self.max_number - result)
-                a = result + b
+        # 验证结果
+        if not (self.min_number <= a <= self.max_number and self.min_result <= result <= self.max_result):
+            # 如果验证失败，使用备用方案
+            a = self._generate_safe_random(self.min_number, self.max_number)
+            b = self._generate_safe_random(self.min_number, a)
+            result = a - b
                 
         expression = self._generate_bracket_expression(a, '-', b, result)
         return expression
