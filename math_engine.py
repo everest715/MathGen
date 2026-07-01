@@ -113,16 +113,24 @@ class MathEngine:
             if self.allow_left_bracket:
                 available_positions.extend([0, 1])
             available_positions.append(2)  # 无括号（填空结果）始终可用
-            if self.allow_right_bracket:
+            # 右边括号仅用于除法带余数的情况
+            if self.allow_right_bracket and op == '÷' and '...' in str(result):
                 available_positions.append(3)
             
             bracket_pos = random.choice(available_positions)
+        
+        # 位置3：右边括号，仅除法带余数时可用，括号只包商或余数
+        if bracket_pos == 3:
+            quotient, remainder = str(result).split('...')
+            if random.random() < 0.5:
+                return f'{a} {op} {b} = (     )...{remainder}'
+            else:
+                return f'{a} {op} {b} = {quotient}...(     )'
         
         expressions = {
             0: f'(     ) {op} {b} = {result}',      # 左操作数括号
             1: f'{a} {op} (     ) = {result}',      # 右操作数括号
             2: f'{a} {op} {b} =',                   # 等号左边无括号（填空结果）
-            3: f'{a} {op} {b} = (     )'            # 等号右边括号（在allow_right_bracket=True时）
         }
         
         return expressions[bracket_pos]
@@ -195,8 +203,10 @@ class MathEngine:
             remainder = self._generate_safe_random(0, min(divisor - 1, self.max_number - quotient * divisor))
             dividend = quotient * divisor + remainder
 
+        result_str = f'{quotient}...{remainder}' if remainder != 0 else str(quotient)
+
         expression = self._generate_bracket_expression(
-            dividend, '÷', divisor, f'{quotient}...{remainder}'
+            dividend, '÷', divisor, result_str
         )
         return expression
     
@@ -346,8 +356,6 @@ class MathEngine:
                     if self.allow_left_bracket:
                         available_positions.extend([0, 1, 2])
                     available_positions.append(3)  # 无括号（填空结果）始终可用
-                    if self.allow_right_bracket:
-                        available_positions.append(4)
                     
                     bracket_pos = random.choice(available_positions)
                     

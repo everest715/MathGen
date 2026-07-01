@@ -3,7 +3,7 @@
 包含所有PDF文档生成相关的逻辑
 """
 
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
@@ -84,11 +84,11 @@ class PDFGenerator:
             per_col: 每列题目数量
         """
         doc = MultiColumnDocTemplate(filename, cols=cols,
-                                   pagesize=letter,
+                                   pagesize=A4,
                                    rightMargin=Constants.PDF_MARGIN, leftMargin=Constants.PDF_MARGIN,
                                    topMargin=Constants.PDF_TOP_MARGIN, bottomMargin=Constants.PDF_BOTTOM_MARGIN)
 
-        available_height = letter[1] - Constants.PDF_TOP_MARGIN - Constants.PDF_BOTTOM_MARGIN
+        available_height = A4[1] - Constants.PDF_TOP_MARGIN - Constants.PDF_BOTTOM_MARGIN
         max_line_height = available_height / per_col
 
         styles = getSampleStyleSheet()
