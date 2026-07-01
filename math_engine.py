@@ -19,26 +19,15 @@ class MathEngine:
                  min_result: Optional[int] = None, 
                  max_result: Optional[int] = None, 
                  allow_left_bracket: bool = False,
-                 allow_right_bracket: bool = False,
-                 reduce_round_tens: bool = False) -> None:
-        """初始化数学引擎
-        
-        Args:
-            min_number: 最小数字值（默认值：Constants.DEFAULT_MIN_NUMBER）
-            max_number: 最大数字值（默认值：Constants.DEFAULT_MAX_NUMBER）
-            min_result: 最小结果值（默认值：Constants.DEFAULT_MIN_RESULT）
-            max_result: 最大结果值（默认值：Constants.DEFAULT_MAX_RESULT）
-            allow_left_bracket: 是否允许括号出现在等号左边（默认值：False）
-            allow_right_bracket: 是否允许括号出现在等号右边（默认值：False）
-            reduce_round_tens: 是否减少整十数字在加减法中的出现（默认值：False）
-        """
+                 allow_right_bracket: bool = False) -> None:
+        """初始化数学引擎"""
         self.min_number: int = min_number or Constants.DEFAULT_MIN_NUMBER
         self.max_number: int = max_number or Constants.DEFAULT_MAX_NUMBER
         self.min_result: int = min_result or Constants.DEFAULT_MIN_RESULT
         self.max_result: int = max_result or Constants.DEFAULT_MAX_RESULT
         self.allow_left_bracket: bool = allow_left_bracket
         self.allow_right_bracket: bool = allow_right_bracket
-        self.reduce_round_tens: bool = reduce_round_tens
+        self.reduce_round_tens: bool = True
         
         # 确保范围合理
         self._normalize_ranges()
@@ -56,8 +45,7 @@ class MathEngine:
                      min_result: int, 
                      max_result: int, 
                      allow_left_bracket: Optional[bool] = None,
-                     allow_right_bracket: Optional[bool] = None,
-                     reduce_round_tens: Optional[bool] = None) -> None:
+                     allow_right_bracket: Optional[bool] = None) -> None:
         """更新数字和结果范围。"""
         self.min_number = min_number
         self.max_number = max_number
@@ -67,8 +55,6 @@ class MathEngine:
             self.allow_left_bracket = allow_left_bracket
         if allow_right_bracket is not None:
             self.allow_right_bracket = allow_right_bracket
-        if reduce_round_tens is not None:
-            self.reduce_round_tens = reduce_round_tens
         
         self._normalize_ranges()
     
@@ -172,34 +158,29 @@ class MathEngine:
     
     def _generate_division_expression(self) -> str:
         """生成除法表达式(带余数)"""
-        # 除数在数字范围内，且不超过9
         divisor = self._generate_safe_random(
             max(2, self.min_number), 
-            min(self.max_number, 9)
+            self.max_number
         )
         
-        # 计算商的有效范围
+        # 商至少为2，避免被除数等于除数
         max_quotient = min(
             self.max_result, 
-            9, 
-            self.max_number // divisor if divisor > 0 else 9
+            self.max_number // divisor if divisor > 0 else self.max_result
         )
-        min_quotient = max(1, self.min_result)
+        min_quotient = max(2, self.min_result)
         
-        # 确保范围有效
         if min_quotient > max_quotient:
-            quotient = self._generate_safe_random(1, min(9, self.max_result))
+            quotient = self._generate_safe_random(2, self.max_result)
         else:
             quotient = self._generate_safe_random(min_quotient, max_quotient)
         
-        # 余数小于除数
         remainder = self._generate_safe_random(0, divisor - 1)
         dividend = quotient * divisor + remainder
         
-        # 确保被除数在数字范围内
         if dividend > self.max_number:
-            max_quotient = min(9, self.max_number // divisor)
-            quotient = self._generate_safe_random(1, max_quotient)
+            max_quotient = self.max_number // divisor
+            quotient = self._generate_safe_random(2, max_quotient)
             remainder = self._generate_safe_random(0, min(divisor - 1, self.max_number - quotient * divisor))
             dividend = quotient * divisor + remainder
 
@@ -210,30 +191,57 @@ class MathEngine:
         )
         return expression
     
+    def _generate_division_no_remainder_expression(self) -> str:
+        """生成除法表达式(无余数)"""
+        divisor = self._generate_safe_random(
+            max(2, self.min_number), 
+            self.max_number
+        )
+        
+        # 商至少为2，避免被除数等于除数
+        max_quotient = min(
+            self.max_result, 
+            self.max_number // divisor if divisor > 0 else self.max_result
+        )
+        min_quotient = max(2, self.min_result)
+        
+        if min_quotient > max_quotient:
+            quotient = self._generate_safe_random(2, self.max_result)
+        else:
+            quotient = self._generate_safe_random(min_quotient, max_quotient)
+        
+        dividend = quotient * divisor
+        
+        if dividend > self.max_number:
+            max_quotient = self.max_number // divisor
+            quotient = self._generate_safe_random(2, max_quotient)
+            dividend = quotient * divisor
+
+        expression = self._generate_bracket_expression(
+            dividend, '÷', divisor, str(quotient)
+        )
+        return expression
+    
     def _generate_multiplication_expression(self) -> str:
         """生成乘法表达式"""
-        # 生成两个乘数，确保结果在范围内
         a = self._generate_safe_random(
             max(2, self.min_number), 
-            min(self.max_number, 9)
+            self.max_number
         )
         
         max_b = min(
             self.max_number, 
-            self.max_result // a if a > 0 else self.max_number,
-            9  # 限制乘数范围
+            self.max_result // a if a > 0 else self.max_number
         )
         b = self._generate_safe_random(max(2, self.min_number), max_b)
         result = a * b
         
         # 确保结果在范围内
         if not self._is_valid_expression_result(result):
-            # 重新生成较小的数
-            a = self._generate_safe_random(2, min(5, self.max_number, 9))
+            a = self._generate_safe_random(2, min(5, self.max_number))
             max_b_for_result = min(
                 self.max_result // a if a > 0 else self.max_number,
-                self.max_number,
-                9
+                self.max_number
             )
             b = self._generate_safe_random(2, max_b_for_result)
             result = a * b
@@ -400,14 +408,13 @@ class MathEngine:
     
     def _generate_for_mixed_first(self, op1: str, op2: str) -> tuple[int, int, int]:
         """处理第一个运算符是乘除法的情况"""
-        # 生成第一个运算
         if op1 == 'x':
-            a = self._generate_safe_random(2, min(self.max_number, 9))
-            b = self._generate_safe_random(2, min(self.max_number, 9))
+            a = self._generate_safe_random(2, self.max_number)
+            b = self._generate_safe_random(2, min(self.max_number, self.max_result // a if a > 0 else self.max_number))
             temp_result = a * b
         else:  # ÷
-            b = self._generate_safe_random(2, min(self.max_number, 9))
-            quotient = self._generate_safe_random(1, min(self.max_result, self.max_number // b if b > 0 else 1))
+            b = self._generate_safe_random(2, self.max_number)
+            quotient = self._generate_safe_random(2, min(self.max_result, self.max_number // b if b > 0 else self.max_result))
             a = b * quotient
             temp_result = quotient
         
@@ -423,14 +430,13 @@ class MathEngine:
     
     def _generate_for_mixed_second(self, op1: str, op2: str) -> tuple[int, int, int]:
         """处理第二个运算符是乘除法的情况"""
-        # 生成第二个运算（乘除法）
         if op2 == 'x':
-            b = self._generate_safe_random(2, min(self.max_number, 9))
-            c = self._generate_safe_random(2, min(self.max_number, 9))
+            b = self._generate_safe_random(2, self.max_number)
+            c = self._generate_safe_random(2, min(self.max_number, self.max_result // b if b > 0 else self.max_number))
             temp_result = b * c
         else:  # ÷
-            c = self._generate_safe_random(2, min(self.max_number, 9))
-            quotient = self._generate_safe_random(1, min(self.max_result, self.max_number // c if c > 0 else 1))
+            c = self._generate_safe_random(2, self.max_number)
+            quotient = self._generate_safe_random(2, min(self.max_result, self.max_number // c if c > 0 else self.max_result))
             b = c * quotient
             temp_result = quotient
         

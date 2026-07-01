@@ -44,7 +44,7 @@ class UIGenerator:
         self.has_subtraction = tk.BooleanVar(value=True)
         self.has_multiplication = tk.BooleanVar(value=False)
         self.has_division = tk.BooleanVar(value=False)
-        self.has_mixed = tk.BooleanVar(value=False)
+        self.has_division_no_remainder = tk.BooleanVar(value=False)
         
         # 数字数量选择
         self.num_count = tk.StringVar(value=Constants.NUM_COUNT_OPTIONS[0])
@@ -68,9 +68,6 @@ class UIGenerator:
         # 括号位置设置
         self.allow_left_bracket = tk.BooleanVar(value=False)
         self.allow_right_bracket = tk.BooleanVar(value=False)
-        
-        # 减少整十数字设置（仅加减法有效）
-        self.reduce_round_tens = tk.BooleanVar(value=False)
         
         # 保存路径
         self.save_path = tk.StringVar(value=Constants.DEFAULT_SAVE_PATH)
@@ -110,9 +107,6 @@ class UIGenerator:
         # 括号设置
         self.create_bracket_settings_frame(main_frame)
         
-        # 整十数字设置
-        self.create_round_tens_settings_frame(main_frame)
-        
         # 保存路径设置
         self.create_save_path_frame(main_frame)
         
@@ -128,7 +122,7 @@ class UIGenerator:
         ttk.Checkbutton(type_frame, text="减法", variable=self.has_subtraction).grid(row=0, column=1, sticky=tk.W, padx=(0, 10))
         ttk.Checkbutton(type_frame, text="乘法", variable=self.has_multiplication).grid(row=0, column=2, sticky=tk.W, padx=(0, 10))
         ttk.Checkbutton(type_frame, text="除法(带余数)", variable=self.has_division).grid(row=0, column=3, sticky=tk.W, padx=(0, 10))
-        ttk.Checkbutton(type_frame, text="混合运算", variable=self.has_mixed).grid(row=0, column=4, sticky=tk.W)
+        ttk.Checkbutton(type_frame, text="除法", variable=self.has_division_no_remainder).grid(row=0, column=4, sticky=tk.W)
     
     def create_num_count_frame(self, parent):
         """创建数字数量选择框架"""
@@ -189,14 +183,6 @@ class UIGenerator:
         ttk.Checkbutton(bracket_frame, text="允许等号左边出现括号", variable=self.allow_left_bracket).grid(row=0, column=0, sticky=tk.W, padx=(0, 20))
         ttk.Checkbutton(bracket_frame, text="允许等号右边出现括号", variable=self.allow_right_bracket).grid(row=0, column=1, sticky=tk.W)
     
-    def create_round_tens_settings_frame(self, parent):
-        """创建整十数字设置框架"""
-        round_tens_frame = ttk.LabelFrame(parent, text="整十数字设置", padding="5")
-        round_tens_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
-        
-        ttk.Checkbutton(round_tens_frame, text="减少整十数字（10、20、30等）在加减法中的出现", 
-                       variable=self.reduce_round_tens).grid(row=0, column=0, sticky=tk.W)
-    
     def create_save_path_frame(self, parent):
         """创建保存路径设置框架"""
         path_frame = ttk.LabelFrame(parent, text="保存路径", padding="5")
@@ -227,7 +213,7 @@ class UIGenerator:
             'has_subtraction': self.has_subtraction.get(),
             'has_multiplication': self.has_multiplication.get(),
             'has_division': self.has_division.get(),
-            'has_mixed': self.has_mixed.get(),
+            'has_division_no_remainder': self.has_division_no_remainder.get(),
             'num_count': self.num_count.get(),
             'min_number': self.min_number.get(),
             'max_number': self.max_number.get(),
@@ -239,7 +225,6 @@ class UIGenerator:
             'font_size': self.font_size.get(),
             'allow_left_bracket': self.allow_left_bracket.get(),
             'allow_right_bracket': self.allow_right_bracket.get(),
-            'reduce_round_tens': self.reduce_round_tens.get(),
             'save_path': self.save_path.get()
         }
     

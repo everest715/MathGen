@@ -55,7 +55,7 @@ class MathProblemGenerator:
                 operations['has_subtraction'],
                 operations['has_multiplication'],
                 operations['has_division'],
-                operations['has_mixed']
+                operations['has_division_no_remainder']
             )
             
             self.pdf_generator.create_pdf(
@@ -105,8 +105,7 @@ class MathProblemGenerator:
                 int(settings['min_number']), int(settings['max_number']),
                 int(settings['min_result']), int(settings['max_result']),
                 settings['allow_left_bracket'],
-                settings['allow_right_bracket'],
-                settings['reduce_round_tens']
+                settings['allow_right_bracket']
             )
             
             return True, ""
@@ -122,7 +121,7 @@ class MathProblemGenerator:
             'has_subtraction': settings['has_subtraction'],
             'has_multiplication': settings['has_multiplication'],
             'has_division': settings['has_division'],
-            'has_mixed': settings['has_mixed'],
+            'has_division_no_remainder': settings['has_division_no_remainder'],
             'num_count': 2 if settings['num_count'] == '2个数字' else 3
         }
     
@@ -139,7 +138,7 @@ class MathProblemGenerator:
             'has_subtraction': 'subtraction',
             'has_multiplication': 'multiplication',
             'has_division': 'division',
-            'has_mixed': 'mixed'
+            'has_division_no_remainder': 'division_no_remainder',
         }
         for key, op in op_map.items():
             if operations.get(key, False):
@@ -154,6 +153,7 @@ class MathProblemGenerator:
             'subtraction': self.math_engine._generate_subtraction_expression,
             'multiplication': self.math_engine._generate_multiplication_expression,
             'division': self.math_engine._generate_division_expression,
+            'division_no_remainder': self.math_engine._generate_division_no_remainder_expression,
         }
         
         num_count = operations['num_count']
@@ -163,19 +163,14 @@ class MathProblemGenerator:
         for _ in range(total_problems):
             op_type = random.choice(available_ops)
             
-            if op_type == 'mixed':
-                # 混合运算：3个数，包含乘除
-                problem = self.math_engine.generate_expression(
-                    num_count=3, has_multiply=True, has_divide=True
-                )
-            elif num_count == 2:
+            if num_count == 2:
                 # 2数运算：直接调用对应方法
                 method = two_num_methods.get(op_type)
                 problem = method() if method else Constants.DEFAULT_PROBLEM
             else:
                 # 3数运算：通过 generate_expression 统一分发
-                has_mul = op_type in ['multiplication', 'mixed']
-                has_div = op_type in ['division', 'mixed']
+                has_mul = op_type == 'multiplication'
+                has_div = op_type in ['division', 'division_no_remainder']
                 problem = self.math_engine.generate_expression(
                     num_count=3, has_multiply=has_mul, has_divide=has_div
                 )

@@ -105,7 +105,7 @@ class PDFGenerator:
                          has_subtraction: bool,
                          has_multiplication: bool,
                          has_division: bool,
-                         has_mixed: bool) -> str:
+                         has_division_no_remainder: bool) -> str:
         """生成保存文件名"""
         if save_path and save_path.strip():
             return save_path.strip()
@@ -115,7 +115,7 @@ class PDFGenerator:
         if has_subtraction: selected.append('减法')
         if has_multiplication: selected.append('乘法')
         if has_division: selected.append('除法')
-        if has_mixed: selected.append('混合运算')
+        if has_division_no_remainder: selected.append('除法')
 
         if selected:
             return f"数学题_{'_'.join(selected)}.pdf"
