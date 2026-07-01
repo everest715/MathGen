@@ -47,7 +47,7 @@ class Constants:
     
     # 页面设置范围
     MIN_ROWS_PER_PAGE: Final[int] = 1
-    MAX_ROWS_PER_PAGE: Final[int] = 20
+    MAX_ROWS_PER_PAGE: Final[int] = 80
     MIN_COLS_PER_PAGE: Final[int] = 1
     MAX_COLS_PER_PAGE: Final[int] = 5
     MIN_TOTAL_PAGES: Final[int] = 1
@@ -59,11 +59,11 @@ class Constants:
     DEFAULT_SAVE_PATH: Final[str] = "数学题.pdf"
     
     # ==================== PDF生成配置 ====================
-    PDF_MARGIN: Final[int] = 48
-    PDF_TOP_MARGIN: Final[int] = 18
-    PDF_BOTTOM_MARGIN: Final[int] = 36
-    PDF_FRAME_PADDING: Final[int] = 6
-    PDF_FRAME_SPACING: Final[int] = 12
+    PDF_MARGIN: Final[int] = 28
+    PDF_TOP_MARGIN: Final[int] = 10
+    PDF_BOTTOM_MARGIN: Final[int] = 20
+    PDF_FRAME_PADDING: Final[int] = 4
+    PDF_FRAME_SPACING: Final[int] = 10
     
     # ==================== 错误处理和限制 ====================
     MAX_TOTAL_PROBLEMS: Final[int] = 10000

@@ -447,7 +447,7 @@ class MathEngine:
             c = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result - a - b), rt)
             
         elif op1 == '+' and op2 == '-':
-            # a + b - c (确保 a + b > c)
+            # a + b - c (确保 a + b > c，且 b != c 避免抵消)
             c = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result - self.min_result), rt)
             temp_sum = self._generate_random_with_round_tens_control(c + self.min_result, min(self.max_result + c, self.max_number * 2), rt)
             a = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, temp_sum - self.min_number), rt)
@@ -455,11 +455,18 @@ class MathEngine:
             if b > self.max_number:
                 b = self.max_number
                 a = temp_sum - b
+            # b == c 时抵消，微调 b
+            if b == c:
+                b = b + 1 if b < self.max_number else b - 1
+                a = temp_sum - b
                 
         elif op1 == '-' and op2 == '+':
-            # a - b + c (确保 a > b)
+            # a - b + c (确保 a > b，且 b != c 避免抵消)
             b = self._generate_random_with_round_tens_control(self.min_number, self.max_number, rt)
             c = self._generate_random_with_round_tens_control(self.min_number, self.max_number, rt)
+            # b == c 时抵消，微调 c
+            if b == c:
+                c = c + 1 if c < self.max_number else c - 1
             min_a = max(self.min_number, b + self.min_result - c if c < self.min_result else b + 1)
             a = self._generate_random_with_round_tens_control(min_a, self.max_number, rt)
             
