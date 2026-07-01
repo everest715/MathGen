@@ -118,11 +118,11 @@ class UIGenerator:
         type_frame = ttk.LabelFrame(parent, text="题目类型", padding="5")
         type_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
-        ttk.Checkbutton(type_frame, text="加法", variable=self.has_addition).grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
-        ttk.Checkbutton(type_frame, text="减法", variable=self.has_subtraction).grid(row=0, column=1, sticky=tk.W, padx=(0, 10))
-        ttk.Checkbutton(type_frame, text="乘法", variable=self.has_multiplication).grid(row=0, column=2, sticky=tk.W, padx=(0, 10))
-        ttk.Checkbutton(type_frame, text="除法(带余数)", variable=self.has_division).grid(row=0, column=3, sticky=tk.W, padx=(0, 10))
-        ttk.Checkbutton(type_frame, text="除法", variable=self.has_division_no_remainder).grid(row=0, column=4, sticky=tk.W)
+        ttk.Checkbutton(type_frame, text="加法", variable=self.has_addition).grid(row=0, column=0, sticky=tk.W, padx=(0, 20))
+        ttk.Checkbutton(type_frame, text="减法", variable=self.has_subtraction).grid(row=0, column=1, sticky=tk.W, padx=(0, 20))
+        ttk.Checkbutton(type_frame, text="乘法", variable=self.has_multiplication).grid(row=0, column=2, sticky=tk.W, padx=(0, 20))
+        ttk.Checkbutton(type_frame, text="除法", variable=self.has_division_no_remainder).grid(row=0, column=3, sticky=tk.W, padx=(0, 20))
+        ttk.Checkbutton(type_frame, text="除法(带余数)", variable=self.has_division).grid(row=0, column=4, sticky=tk.W)
     
     def create_num_count_frame(self, parent):
         """创建数字数量选择框架"""
@@ -148,7 +148,7 @@ class UIGenerator:
     
     def create_number_range_frame(self, parent):
         """创建数字范围设置框架"""
-        return self._create_range_frame(parent, "数字范围 (1-999)", 2, self.min_number, self.max_number)
+        return self._create_range_frame(parent, "数字范围 (2-999)", 2, self.min_number, self.max_number)
     
     def create_result_range_frame(self, parent):
         """创建结果范围设置框架"""

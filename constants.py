@@ -14,7 +14,7 @@ class Constants:
     
     # ==================== UI界面配置 ====================
     WINDOW_TITLE: Final[str] = "数学题生成器"
-    WINDOW_SIZE: Final[str] = "600x620"
+    WINDOW_SIZE: Final[str] = "760x780"
     
     # ==================== 数学运算配置 ====================
     # 乘除法因子范围
@@ -23,19 +23,19 @@ class Constants:
     
     # 数字数量选择
     DEFAULT_NUM_COUNT: Final[int] = 2
-    NUM_COUNT_OPTIONS: Final[List[str]] = ['2个数字', '3个数字']
+    NUM_COUNT_OPTIONS: Final[List[str]] = ['2', '3']
     
     # ==================== 数字和结果范围 ====================
     # 全局范围限制
-    MIN_RANGE_VALUE: Final[int] = 1
+    MIN_RANGE_VALUE: Final[int] = 2
     MAX_RANGE_VALUE: Final[int] = 999
     
     # 默认数字范围
-    DEFAULT_MIN_NUMBER: Final[int] = 1
+    DEFAULT_MIN_NUMBER: Final[int] = 2
     DEFAULT_MAX_NUMBER: Final[int] = 999
     
     # 默认结果范围
-    DEFAULT_MIN_RESULT: Final[int] = 1
+    DEFAULT_MIN_RESULT: Final[int] = 2
     DEFAULT_MAX_RESULT: Final[int] = 999
     
     # ==================== 页面布局配置 ====================

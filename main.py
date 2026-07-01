@@ -3,6 +3,7 @@
 整合UI生成、算式生成、PDF生成等模块的入口文件
 """
 
+import ctypes
 import tkinter as tk
 from tkinter import messagebox
 from typing import Dict, List
@@ -11,6 +12,9 @@ from constants import Constants
 from ui_generator import UIGenerator
 from math_engine import MathEngine
 from pdf_generator import PDFGenerator
+
+# 启用 Windows 高 DPI 支持，解决文字模糊问题
+ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
 
 class MathProblemGenerator:
@@ -122,7 +126,7 @@ class MathProblemGenerator:
             'has_multiplication': settings['has_multiplication'],
             'has_division': settings['has_division'],
             'has_division_no_remainder': settings['has_division_no_remainder'],
-            'num_count': 2 if settings['num_count'] == '2个数字' else 3
+            'num_count': 2 if settings['num_count'] == '2' else 3
         }
     
     def _generate_all_problems(self, settings: Dict, operations: Dict) -> List[str]:
