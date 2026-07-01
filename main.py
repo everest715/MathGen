@@ -4,10 +4,9 @@
 """
 
 import ctypes
-import tkinter as tk
-from tkinter import messagebox
-from typing import Dict, List
 import random
+import tkinter as tk
+from typing import Dict, List
 from constants import Constants
 from ui_generator import UIGenerator
 from math_engine import MathEngine

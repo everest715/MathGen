@@ -17,12 +17,7 @@ class Constants:
     WINDOW_SIZE: Final[str] = "760x780"
     
     # ==================== 数学运算配置 ====================
-    # 乘除法因子范围
-    MIN_MULTIPLICATION_FACTOR: Final[int] = 2
-    MAX_MULTIPLICATION_FACTOR: Final[int] = 9
-    
     # 数字数量选择
-    DEFAULT_NUM_COUNT: Final[int] = 2
     NUM_COUNT_OPTIONS: Final[List[str]] = ['2', '3']
     
     # ==================== 数字和结果范围 ====================
@@ -68,4 +63,4 @@ class Constants:
     # ==================== 错误处理和限制 ====================
     MAX_TOTAL_PROBLEMS: Final[int] = 10000
     MAX_GENERATION_ATTEMPTS: Final[int] = 10
-    DEFAULT_PROBLEM: Final[str] = '1 + 1 ='
+    DEFAULT_PROBLEM: Final[str] = '2 + 2 ='

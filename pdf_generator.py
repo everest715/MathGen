@@ -114,8 +114,7 @@ class PDFGenerator:
         if has_addition: selected.append('加法')
         if has_subtraction: selected.append('减法')
         if has_multiplication: selected.append('乘法')
-        if has_division: selected.append('除法')
-        if has_division_no_remainder: selected.append('除法')
+        if has_division or has_division_no_remainder: selected.append('除法')
 
         if selected:
             return f"数学题_{'_'.join(selected)}.pdf"

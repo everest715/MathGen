@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Simplified math_engine.py with unified 3-number expression generation"""
+"""数学表达式生成引擎"""
 
 import random
-from typing import Optional, Tuple, Dict, Callable
+from typing import Optional
 from constants import Constants
 
 
@@ -29,7 +29,6 @@ class MathEngine:
         self.allow_right_bracket: bool = allow_right_bracket
         self.reduce_round_tens: bool = True
         
-        # 确保范围合理
         self._normalize_ranges()
     
     def _normalize_ranges(self) -> None:
@@ -59,13 +58,12 @@ class MathEngine:
         self._normalize_ranges()
     
     def _generate_safe_random(self, min_val: int, max_val: int, 
-                             fallback_min: int = 1, fallback_max: int = 10) -> int:
+                             fallback_min: int = 2, fallback_max: int = 10) -> int:
         """安全地生成随机数，如果范围无效则使用备用范围"""
         try:
             if min_val <= max_val:
                 return random.randint(min_val, max_val)
-            else:
-                return random.randint(fallback_min, fallback_max)
+            return random.randint(fallback_min, fallback_max)
         except ValueError:
             return random.randint(fallback_min, fallback_max)
     
@@ -91,79 +89,74 @@ class MathEngine:
         return self.min_result <= result <= self.max_result
     
     def _generate_bracket_expression(self, a: int, op: str, b: int, 
-                                    result: str, bracket_pos: Optional[int] = None) -> str:
+                                    result, bracket_pos: Optional[int] = None) -> str:
         """生成带括号的表达式"""
+        result = str(result)
+        
         if bracket_pos is None:
-            # 根据括号设置决定可选的括号位置
             available_positions = []
             if self.allow_left_bracket:
                 available_positions.extend([0, 1])
             available_positions.append(2)  # 无括号（填空结果）始终可用
             # 右边括号仅用于除法带余数的情况
-            if self.allow_right_bracket and op == '÷' and '...' in str(result):
+            if self.allow_right_bracket and op == '÷' and '...' in result:
                 available_positions.append(3)
             
             bracket_pos = random.choice(available_positions)
         
         # 位置3：右边括号，仅除法带余数时可用，括号只包商或余数
         if bracket_pos == 3:
-            quotient, remainder = str(result).split('...')
+            quotient, remainder = result.split('...')
             if random.random() < 0.5:
                 return f'{a} {op} {b} = (     )...{remainder}'
             else:
                 return f'{a} {op} {b} = {quotient}...(     )'
         
         expressions = {
-            0: f'(     ) {op} {b} = {result}',      # 左操作数括号
-            1: f'{a} {op} (     ) = {result}',      # 右操作数括号
-            2: f'{a} {op} {b} =',                   # 等号左边无括号（填空结果）
+            0: f'(     ) {op} {b} = {result}',
+            1: f'{a} {op} (     ) = {result}',
+            2: f'{a} {op} {b} =',
         }
         
         return expressions[bracket_pos]
     
-    def generate_expression(self, num_count: int = 2, 
+    def generate_expression(self, num_count: int = 3, 
                            has_multiply: bool = False, 
                            has_divide: bool = False) -> str:
-        """生成单个数学表达式"""
-        if num_count not in [2, 3]:
-            raise ValueError("num_count必须是2或3")
+        """生成三数运算表达式"""
+        max_attempts = Constants.MAX_GENERATION_ATTEMPTS
         
-        if num_count == 2:
-            return self._generate_two_number_expression(has_multiply, has_divide)
-        else:
-            return self._generate_three_number_expression(has_multiply, has_divide)
-    
-    def _generate_two_number_expression(self, has_multiply: bool, has_divide: bool) -> str:
-        """生成两个数的表达式"""
-        # 随机选择运算类型
-        operation_choices = []
-        if has_divide:
-            operation_choices.append('÷')
-        if has_multiply:
-            operation_choices.append('x')
-        operation_choices.extend(['+', '-'])  # 总是包含加减法
+        for _ in range(max_attempts):
+            op1, op2 = self._select_operators(has_multiply, has_divide)
+            a, b, c = self._generate_three_numbers(op1, op2)
+            
+            try:
+                result = self._calculate_expression((a, b, c), (op1, op2))
+                
+                if self._is_valid_expression_result(result):
+                    available_positions = []
+                    if self.allow_left_bracket:
+                        available_positions.extend([0, 1, 2])
+                    available_positions.append(3)  # 无括号（填空结果）始终可用
+                    
+                    bracket_pos = random.choice(available_positions)
+                    
+                    expressions = {
+                        0: f'(     ) {op1} {b} {op2} {c} = {result}',
+                        1: f'{a} {op1} (     ) {op2} {c} = {result}',
+                        2: f'{a} {op1} {b} {op2} (     ) = {result}',
+                        3: f'{a} {op1} {b} {op2} {c} =',
+                    }
+                    return expressions[bracket_pos]
+            except (ZeroDivisionError, ValueError):
+                continue
         
-        operation = random.choice(operation_choices)
-        
-        # 使用统一的生成方法
-        operation_methods: Dict[str, Callable[[], str]] = {
-            '÷': self._generate_division_expression,
-            'x': self._generate_multiplication_expression,
-            '+': self._generate_addition_expression,
-            '-': self._generate_subtraction_expression
-        }
-        
-        method = operation_methods.get(operation)
-        return method() if method else Constants.DEFAULT_PROBLEM
+        return Constants.DEFAULT_PROBLEM
     
     def _generate_division_expression(self) -> str:
         """生成除法表达式(带余数)"""
-        divisor = self._generate_safe_random(
-            max(2, self.min_number), 
-            self.max_number
-        )
+        divisor = self._generate_safe_random(max(2, self.min_number), self.max_number)
         
-        # 商至少为2，避免被除数等于除数
         max_quotient = min(
             self.max_result, 
             self.max_number // divisor if divisor > 0 else self.max_result
@@ -185,20 +178,12 @@ class MathEngine:
             dividend = quotient * divisor + remainder
 
         result_str = f'{quotient}...{remainder}' if remainder != 0 else str(quotient)
-
-        expression = self._generate_bracket_expression(
-            dividend, '÷', divisor, result_str
-        )
-        return expression
+        return self._generate_bracket_expression(dividend, '÷', divisor, result_str)
     
     def _generate_division_no_remainder_expression(self) -> str:
         """生成除法表达式(无余数)"""
-        divisor = self._generate_safe_random(
-            max(2, self.min_number), 
-            self.max_number
-        )
+        divisor = self._generate_safe_random(max(2, self.min_number), self.max_number)
         
-        # 商至少为2，避免被除数等于除数
         max_quotient = min(
             self.max_result, 
             self.max_number // divisor if divisor > 0 else self.max_result
@@ -217,26 +202,16 @@ class MathEngine:
             quotient = self._generate_safe_random(2, max_quotient)
             dividend = quotient * divisor
 
-        expression = self._generate_bracket_expression(
-            dividend, '÷', divisor, str(quotient)
-        )
-        return expression
+        return self._generate_bracket_expression(dividend, '÷', divisor, str(quotient))
     
     def _generate_multiplication_expression(self) -> str:
         """生成乘法表达式"""
-        a = self._generate_safe_random(
-            max(2, self.min_number), 
-            self.max_number
-        )
+        a = self._generate_safe_random(max(2, self.min_number), self.max_number)
         
-        max_b = min(
-            self.max_number, 
-            self.max_result // a if a > 0 else self.max_number
-        )
+        max_b = min(self.max_number, self.max_result // a if a > 0 else self.max_number)
         b = self._generate_safe_random(max(2, self.min_number), max_b)
         result = a * b
         
-        # 确保结果在范围内
         if not self._is_valid_expression_result(result):
             a = self._generate_safe_random(2, min(5, self.max_number))
             max_b_for_result = min(
@@ -246,16 +221,13 @@ class MathEngine:
             b = self._generate_safe_random(2, max_b_for_result)
             result = a * b
             
-        expression = self._generate_bracket_expression(a, 'x', b, result)
-        return expression
+        return self._generate_bracket_expression(a, 'x', b, result)
     
     def _generate_addition_expression(self) -> str:
         """生成加法表达式（优化分布）"""
-        # 先随机选择结果，确保结果在范围内均匀分布
         min_result_possible = max(self.min_result, self.min_number * 2)
         max_result_possible = min(self.max_result, self.max_number * 2)
         
-        # 确保范围有效
         if min_result_possible > max_result_possible:
             min_result_possible = self.min_result
             max_result_possible = self.max_result
@@ -264,13 +236,10 @@ class MathEngine:
             min_result_possible, max_result_possible, self.reduce_round_tens
         )
         
-        # 根据结果生成a，确保a在有效范围内
         min_a = max(self.min_number, result - self.max_number)
         max_a = min(self.max_number, result - self.min_number)
         
-        # 确保范围有效
         if min_a > max_a:
-            # 如果无法满足条件，调整结果
             result = self._generate_random_with_round_tens_control(
                 max(self.min_result, self.min_number * 2),
                 min(self.max_result, self.max_number * 2),
@@ -279,7 +248,6 @@ class MathEngine:
             min_a = max(self.min_number, result - self.max_number)
             max_a = min(self.max_number, result - self.min_number)
         
-        # 如果仍然无效，使用备用方案
         if min_a > max_a:
             a = self._generate_random_with_round_tens_control(
                 self.min_number, self.max_number, self.reduce_round_tens
@@ -294,21 +262,17 @@ class MathEngine:
             )
             b = result - a
         
-        expression = self._generate_bracket_expression(a, '+', b, result)
-        return expression
+        return self._generate_bracket_expression(a, '+', b, result)
     
     def _generate_subtraction_expression(self) -> str:
         """生成减法表达式（优化分布）"""
-        # 先随机选择结果，确保结果在范围内均匀分布
         result = self._generate_random_with_round_tens_control(
             self.min_result, self.max_result, self.reduce_round_tens
         )
         
-        # 生成减数b，确保被减数a在数字范围内
         max_b_possible = self.max_number - result
         
         if max_b_possible < self.min_number:
-            # 如果当前结果太大，重新生成较小的结果
             result = self._generate_random_with_round_tens_control(
                 self.min_result, 
                 min(self.max_result, self.max_number - self.min_number),
@@ -316,21 +280,16 @@ class MathEngine:
             )
             max_b_possible = self.max_number - result
         
-        # 生成减数b
         if max_b_possible >= self.min_number:
             b = self._generate_random_with_round_tens_control(
                 self.min_number, max_b_possible, self.reduce_round_tens
             )
         else:
-            # 如果无法满足条件，使用最小值
             b = self.min_number
         
-        # 计算被减数a
         a = result + b
         
-        # 验证结果
         if not (self.min_number <= a <= self.max_number and self.min_result <= result <= self.max_result):
-            # 如果验证失败，使用备用方案
             a = self._generate_random_with_round_tens_control(
                 self.min_number, self.max_number, self.reduce_round_tens
             )
@@ -339,71 +298,25 @@ class MathEngine:
             )
             result = a - b
                 
-        expression = self._generate_bracket_expression(a, '-', b, result)
-        return expression
-    
-    def _generate_three_number_expression(self, has_multiply: bool, has_divide: bool) -> str:
-        """生成三个数的表达式（统一处理所有运算符组合）"""
-        max_attempts = Constants.MAX_GENERATION_ATTEMPTS
-        
-        for _ in range(max_attempts):
-            # 选择运算符
-            op1, op2 = self._select_operators(has_multiply, has_divide)
-            
-            # 生成数值
-            a, b, c = self._generate_three_numbers(op1, op2)
-            
-            # 计算结果
-            try:
-                result = self._calculate_expression((a, b, c), (op1, op2))
-                
-                # 验证结果
-                if self._is_valid_expression_result(result):
-                    # 根据括号设置决定可选的括号位置
-                    available_positions = []
-                    if self.allow_left_bracket:
-                        available_positions.extend([0, 1, 2])
-                    available_positions.append(3)  # 无括号（填空结果）始终可用
-                    
-                    bracket_pos = random.choice(available_positions)
-                    
-                    expressions = {
-                        0: f'(     ) {op1} {b} {op2} {c} = {result}',
-                        1: f'{a} {op1} (     ) {op2} {c} = {result}',
-                        2: f'{a} {op1} {b} {op2} (     ) = {result}',
-                        3: f'{a} {op1} {b} {op2} {c} =',
-                        4: f'{a} {op1} {b} {op2} {c} = (     )'
-                    }
-                    return expressions[bracket_pos]
-            except (ZeroDivisionError, ValueError):
-                continue
-        
-        return Constants.DEFAULT_PROBLEM
+        return self._generate_bracket_expression(a, '-', b, result)
     
     def _select_operators(self, has_multiply: bool, has_divide: bool) -> tuple[str, str]:
         """选择两个运算符"""
-        # 构建可用运算符池
         available_ops = ['+', '-']
         if has_multiply:
             available_ops.append('x')
         if has_divide:
             available_ops.append('÷')
         
-        # 随机选择两个运算符
-        op1 = random.choice(available_ops)
-        op2 = random.choice(available_ops)
-        
-        return op1, op2
+        return random.choice(available_ops), random.choice(available_ops)
     
     def _generate_three_numbers(self, op1: str, op2: str) -> tuple[int, int, int]:
         """为给定的运算符生成三个合适的数"""
-        # 优先处理乘除法（需要确保整除、结果范围等）
         if op1 in ['x', '÷']:
             return self._generate_for_mixed_first(op1, op2)
         elif op2 in ['x', '÷']:
             return self._generate_for_mixed_second(op1, op2)
         else:
-            # 纯加减法
             return self._generate_for_add_sub_only(op1, op2)
     
     def _generate_for_mixed_first(self, op1: str, op2: str) -> tuple[int, int, int]:
@@ -418,11 +331,10 @@ class MathEngine:
             a = b * quotient
             temp_result = quotient
         
-        # 生成第二个运算（加减法部分应用整十数字控制）
         if op2 == '+':
             max_c = min(self.max_number, self.max_result - temp_result)
             c = self._generate_random_with_round_tens_control(self.min_number, max_c, self.reduce_round_tens)
-        else:  # '-'
+        else:
             max_c = min(self.max_number, temp_result - self.min_result)
             c = self._generate_random_with_round_tens_control(self.min_number, max_c, self.reduce_round_tens)
         
@@ -440,11 +352,10 @@ class MathEngine:
             b = c * quotient
             temp_result = quotient
         
-        # 生成第一个运算（加减法部分应用整十数字控制）
         if op1 == '+':
             max_a = min(self.max_number, self.max_result - temp_result)
             a = self._generate_random_with_round_tens_control(self.min_number, max_a, self.reduce_round_tens)
-        else:  # '-'
+        else:
             min_a = max(self.min_number, temp_result + self.min_result)
             a = self._generate_random_with_round_tens_control(min_a, self.max_number, self.reduce_round_tens)
         
@@ -453,9 +364,7 @@ class MathEngine:
     def _generate_for_add_sub_only(self, op1: str, op2: str) -> tuple[int, int, int]:
         """处理纯加减法的情况"""
         rt = self.reduce_round_tens
-        # 根据运算符生成三个数，确保中间结果和最终结果都为正
         if op1 == '+' and op2 == '+':
-            # a + b + c
             a = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result // 3), rt)
             b = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, (self.max_result - a) // 2), rt)
             c = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result - a - b), rt)
@@ -469,7 +378,6 @@ class MathEngine:
             if b > self.max_number:
                 b = self.max_number
                 a = temp_sum - b
-            # b == c 时抵消，微调 b
             if b == c:
                 b = b + 1 if b < self.max_number else b - 1
                 a = temp_sum - b
@@ -478,10 +386,9 @@ class MathEngine:
             # a - b + c (确保 a > b，且 b != c 避免抵消)
             b = self._generate_random_with_round_tens_control(self.min_number, self.max_number, rt)
             c = self._generate_random_with_round_tens_control(self.min_number, self.max_number, rt)
-            # b == c 时抵消，微调 c
             if b == c:
                 c = c + 1 if c < self.max_number else c - 1
-            min_a = max(self.min_number, b + self.min_result - c if c < self.min_result else b + 1)
+            min_a = max(self.min_number, b - c + self.min_result if c < b else b + 1)
             a = self._generate_random_with_round_tens_control(min_a, self.max_number, rt)
             
         else:  # '-' and '-'
@@ -509,35 +416,12 @@ class MathEngine:
         a, b, c = numbers
         op1, op2 = ops
         
-        # 先计算乘除法
         if op1 in ['x', '÷']:
-            if op1 == 'x':
-                temp = a * b
-            else:
-                temp = a // b if b != 0 else 0
-            
-            if op2 == '+':
-                return temp + c
-            else:
-                return temp - c
+            temp = a * b if op1 == 'x' else (a // b if b != 0 else 0)
+            return temp + c if op2 == '+' else temp - c
         elif op2 in ['x', '÷']:
-            if op2 == 'x':
-                temp = b * c
-            else:
-                temp = b // c if c != 0 else 0
-            
-            if op1 == '+':
-                return a + temp
-            else:
-                return a - temp
+            temp = b * c if op2 == 'x' else (b // c if c != 0 else 0)
+            return a + temp if op1 == '+' else a - temp
         else:
-            # 纯加减法
-            if op1 == '+':
-                result = a + b
-            else:
-                result = a - b
-            
-            if op2 == '+':
-                return result + c
-            else:
-                return result - c
+            result = a + b if op1 == '+' else a - b
+            return result + c if op2 == '+' else result - c

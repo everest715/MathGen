@@ -6,7 +6,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from constants import Constants
-
 class UIGenerator:
     """用户界面生成器"""
     
@@ -152,7 +151,7 @@ class UIGenerator:
     
     def create_result_range_frame(self, parent):
         """创建结果范围设置框架"""
-        return self._create_range_frame(parent, "结果范围 (1-999)", 3, self.min_result, self.max_result)
+        return self._create_range_frame(parent, "结果范围 (2-999)", 3, self.min_result, self.max_result)
     
     def _create_labeled_entry(self, parent, text, variable, row, column, width=10, padx=(0, 5)):
         """创建带标签的输入框"""
@@ -186,14 +185,14 @@ class UIGenerator:
     def create_save_path_frame(self, parent):
         """创建保存路径设置框架"""
         path_frame = ttk.LabelFrame(parent, text="保存路径", padding="5")
-        path_frame.grid(row=8, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        path_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         ttk.Entry(path_frame, textvariable=self.save_path, width=50).grid(row=0, column=0, padx=(0, 10))
         ttk.Button(path_frame, text="浏览", command=self.browse_save_path).grid(row=0, column=1)
     
     def create_generate_button(self, parent):
         """创建生成按钮"""
-        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=9, column=0, columnspan=2, pady=20)
+        ttk.Button(parent, text="生成数学题", command=self.generate_callback).grid(row=8, column=0, columnspan=2, pady=20)
     
     def browse_save_path(self):
         """浏览保存路径"""
@@ -235,7 +234,3 @@ class UIGenerator:
     def show_success(self, title, message):
         """显示成功消息"""
         messagebox.showinfo(title, message)
-    
-    def show_warning(self, title, message):
-        """显示警告消息"""
-        messagebox.showwarning(title, message)
