@@ -14,7 +14,7 @@ class Constants:
     
     # ==================== UI界面配置 ====================
     WINDOW_TITLE: Final[str] = "数学题生成器"
-    WINDOW_SIZE: Final[str] = "600x580"
+    WINDOW_SIZE: Final[str] = "600x680"
     
     # ==================== 数学运算配置 ====================
     # 乘除法因子范围

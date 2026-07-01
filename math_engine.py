@@ -18,6 +18,7 @@ class MathEngine:
                  max_number: Optional[int] = None, 
                  min_result: Optional[int] = None, 
                  max_result: Optional[int] = None, 
+                 allow_left_bracket: bool = False,
                  allow_right_bracket: bool = False,
                  reduce_round_tens: bool = False) -> None:
         """初始化数学引擎
@@ -27,6 +28,7 @@ class MathEngine:
             max_number: 最大数字值（默认值：Constants.DEFAULT_MAX_NUMBER）
             min_result: 最小结果值（默认值：Constants.DEFAULT_MIN_RESULT）
             max_result: 最大结果值（默认值：Constants.DEFAULT_MAX_RESULT）
+            allow_left_bracket: 是否允许括号出现在等号左边（默认值：False）
             allow_right_bracket: 是否允许括号出现在等号右边（默认值：False）
             reduce_round_tens: 是否减少整十数字在加减法中的出现（默认值：False）
         """
@@ -34,6 +36,7 @@ class MathEngine:
         self.max_number: int = max_number or Constants.DEFAULT_MAX_NUMBER
         self.min_result: int = min_result or Constants.DEFAULT_MIN_RESULT
         self.max_result: int = max_result or Constants.DEFAULT_MAX_RESULT
+        self.allow_left_bracket: bool = allow_left_bracket
         self.allow_right_bracket: bool = allow_right_bracket
         self.reduce_round_tens: bool = reduce_round_tens
         
@@ -52,6 +55,7 @@ class MathEngine:
                      max_number: int, 
                      min_result: int, 
                      max_result: int, 
+                     allow_left_bracket: Optional[bool] = None,
                      allow_right_bracket: Optional[bool] = None,
                      reduce_round_tens: Optional[bool] = None) -> None:
         """更新数字和结果范围。"""
@@ -59,6 +63,8 @@ class MathEngine:
         self.max_number = max_number
         self.min_result = min_result
         self.max_result = max_result
+        if allow_left_bracket is not None:
+            self.allow_left_bracket = allow_left_bracket
         if allow_right_bracket is not None:
             self.allow_right_bracket = allow_right_bracket
         if reduce_round_tens is not None:
@@ -152,11 +158,15 @@ class MathEngine:
                                     result: str, bracket_pos: Optional[int] = None) -> str:
         """生成带括号的表达式"""
         if bracket_pos is None:
-            # 根据allow_right_bracket参数决定可选的括号位置
+            # 根据括号设置决定可选的括号位置
+            available_positions = []
+            if self.allow_left_bracket:
+                available_positions.extend([0, 1])
+            available_positions.append(2)  # 无括号（填空结果）始终可用
             if self.allow_right_bracket:
-                bracket_pos = random.choice([0, 1, 2, 3])  # 0,1,2为左边括号，3为右边括号
-            else:
-                bracket_pos = random.choice([0, 1, 2])  # 只允许左边括号
+                available_positions.append(3)
+            
+            bracket_pos = random.choice(available_positions)
         
         expressions = {
             0: f'(     ) {op} {b} = {result}',      # 左操作数括号
@@ -296,7 +306,9 @@ class MathEngine:
             min_result_possible = self.min_result
             max_result_possible = self.max_result
         
-        result = self._generate_safe_random(min_result_possible, max_result_possible)
+        result = self._generate_random_with_round_tens_control(
+            min_result_possible, max_result_possible, self.reduce_round_tens
+        )
         
         # 根据结果生成a，确保a在有效范围内
         min_a = max(self.min_number, result - self.max_number)
@@ -305,9 +317,10 @@ class MathEngine:
         # 确保范围有效
         if min_a > max_a:
             # 如果无法满足条件，调整结果
-            result = self._generate_safe_random(
+            result = self._generate_random_with_round_tens_control(
                 max(self.min_result, self.min_number * 2),
-                min(self.max_result, self.max_number * 2)
+                min(self.max_result, self.max_number * 2),
+                self.reduce_round_tens
             )
             min_a = max(self.min_number, result - self.max_number)
             max_a = min(self.max_number, result - self.min_number)
@@ -333,16 +346,19 @@ class MathEngine:
     def _generate_subtraction_expression(self) -> str:
         """生成减法表达式（优化分布）"""
         # 先随机选择结果，确保结果在范围内均匀分布
-        result = self._generate_safe_random(self.min_result, self.max_result)
+        result = self._generate_random_with_round_tens_control(
+            self.min_result, self.max_result, self.reduce_round_tens
+        )
         
         # 生成减数b，确保被减数a在数字范围内
         max_b_possible = self.max_number - result
         
         if max_b_possible < self.min_number:
             # 如果当前结果太大，重新生成较小的结果
-            result = self._generate_safe_random(
+            result = self._generate_random_with_round_tens_control(
                 self.min_result, 
-                min(self.max_result, self.max_number - self.min_number)
+                min(self.max_result, self.max_number - self.min_number),
+                self.reduce_round_tens
             )
             max_b_possible = self.max_number - result
         
@@ -389,7 +405,24 @@ class MathEngine:
                 
                 # 验证结果
                 if self._is_valid_expression_result(result):
-                    return f'{a} {op1} {b} {op2} {c} ='
+                    # 根据括号设置决定可选的括号位置
+                    available_positions = []
+                    if self.allow_left_bracket:
+                        available_positions.extend([0, 1, 2])
+                    available_positions.append(3)  # 无括号（填空结果）始终可用
+                    if self.allow_right_bracket:
+                        available_positions.append(4)
+                    
+                    bracket_pos = random.choice(available_positions)
+                    
+                    expressions = {
+                        0: f'(     ) {op1} {b} {op2} {c} = {result}',
+                        1: f'{a} {op1} (     ) {op2} {c} = {result}',
+                        2: f'{a} {op1} {b} {op2} (     ) = {result}',
+                        3: f'{a} {op1} {b} {op2} {c} =',
+                        4: f'{a} {op1} {b} {op2} {c} = (     )'
+                    }
+                    return expressions[bracket_pos]
             except (ZeroDivisionError, ValueError):
                 continue
         

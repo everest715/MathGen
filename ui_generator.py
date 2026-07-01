@@ -66,6 +66,7 @@ class UIGenerator:
         self.font_size = tk.StringVar(value=str(Constants.DEFAULT_FONT_SIZE))
         
         # 括号位置设置
+        self.allow_left_bracket = tk.BooleanVar(value=False)
         self.allow_right_bracket = tk.BooleanVar(value=False)
         
         # 减少整十数字设置（仅加减法有效）
@@ -185,7 +186,8 @@ class UIGenerator:
         bracket_frame = ttk.LabelFrame(parent, text="括号设置", padding="5")
         bracket_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
-        ttk.Checkbutton(bracket_frame, text="允许括号出现在等号右边", variable=self.allow_right_bracket).grid(row=0, column=0, sticky=tk.W)
+        ttk.Checkbutton(bracket_frame, text="允许等号左边出现括号", variable=self.allow_left_bracket).grid(row=0, column=0, sticky=tk.W, padx=(0, 20))
+        ttk.Checkbutton(bracket_frame, text="允许等号右边出现括号", variable=self.allow_right_bracket).grid(row=0, column=1, sticky=tk.W)
     
     def create_round_tens_settings_frame(self, parent):
         """创建整十数字设置框架"""
@@ -235,6 +237,7 @@ class UIGenerator:
             'cols_per_page': self.cols_per_page.get(),
             'total_pages': self.total_pages.get(),
             'font_size': self.font_size.get(),
+            'allow_left_bracket': self.allow_left_bracket.get(),
             'allow_right_bracket': self.allow_right_bracket.get(),
             'reduce_round_tens': self.reduce_round_tens.get(),
             'save_path': self.save_path.get()
