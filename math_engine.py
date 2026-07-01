@@ -2,7 +2,7 @@
 """Simplified math_engine.py with unified 3-number expression generation"""
 
 import random
-from typing import Optional, Tuple, Dict, Any, Callable
+from typing import Optional, Tuple, Dict, Callable
 from constants import Constants
 
 
@@ -84,75 +84,25 @@ class MathEngine:
             return random.randint(fallback_min, fallback_max)
     
     def _generate_random_with_round_tens_control(self, min_val: int, max_val: int, 
-                                                reduce_round_tens: bool = False,
-                                                max_attempts: int = 10) -> int:
-        """生成随机数，可选择性地减少整十数字的出现概率
+                                                reduce_round_tens: bool = False) -> int:
+        """生成随机数，可选择性地减少整十数字的出现概率"""
+        value = self._generate_safe_random(min_val, max_val)
         
-        Args:
-            min_val: 最小值
-            max_val: 最大值
-            reduce_round_tens: 是否减少整十数字（10、20、30等）的出现
-            max_attempts: 最大尝试次数
-            
-        Returns:
-            生成的随机数
-        """
-        for attempt in range(max_attempts):
-            value = self._generate_safe_random(min_val, max_val)
-            
-            # 如果不需要减少整十数字，直接返回
-            if not reduce_round_tens:
-                return value
-            
-            # 检查是否为整十数字（10、20、30等）
-            if value % 10 == 0 and value != 0:
-                # 以50%的概率重新生成（可以根据需要调整这个概率）
-                if random.random() < 0.5 and attempt < max_attempts - 1:
-                    continue
-            
+        if not reduce_round_tens or value == 0 or value % 10 != 0:
             return value
         
-        # 如果多次尝试后仍然得到整十数字，就接受它
-        return value
+        # 整十数字：50% 概率保留，50% 概率替换为附近的非整十数字
+        if random.random() < 0.5:
+            return value
+        
+        offset = random.randint(1, 9)
+        if random.random() < 0.5:
+            offset = -offset
+        return max(min_val, min(max_val, value + offset))
     
     def _is_valid_expression_result(self, result: int) -> bool:
         """验证表达式结果是否在有效范围内"""
         return self.min_result <= result <= self.max_result
-    
-    def _is_valid_number(self, number: int) -> bool:
-        """验证数字是否在有效范围内"""
-        return self.min_number <= number <= self.max_number
-    
-    def _generate_multiplication_pair(self) -> Tuple[int, int]:
-        """生成乘法因子对，确保结果不超过99"""
-        a = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, 
-                          Constants.MAX_MULTIPLICATION_FACTOR)
-        b = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, 
-                          Constants.MAX_MULTIPLICATION_FACTOR)
-        return a, b
-    
-    def _generate_division_pair(self) -> Tuple[int, int, int]:
-        """生成除法数对，确保能整除"""
-        divisor = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, 
-                                Constants.MAX_MULTIPLICATION_FACTOR)
-        quotient = random.randint(Constants.MIN_MULTIPLICATION_FACTOR, 
-                                 Constants.MAX_MULTIPLICATION_FACTOR)
-        dividend = divisor * quotient
-        return dividend, divisor, quotient
-    
-    def _find_factors(self, number: int) -> list[Tuple[int, int]]:
-        """找到数字在指定范围内的因子对"""
-        factors = []
-        min_factor = Constants.MIN_MULTIPLICATION_FACTOR
-        max_factor = Constants.MAX_MULTIPLICATION_FACTOR
-        
-        for i in range(min_factor, max_factor + 1):
-            if number % i == 0:
-                j = number // i
-                if min_factor <= j <= max_factor:
-                    factors.append((i, j))
-        
-        return factors
     
     def _generate_bracket_expression(self, a: int, op: str, b: int, 
                                     result: str, bracket_pos: Optional[int] = None) -> str:
@@ -176,20 +126,6 @@ class MathEngine:
         }
         
         return expressions[bracket_pos]
-    
-    def _safe_generate_expression(self, generator_func: Callable[[], str], 
-                                 max_attempts: int = Constants.MAX_GENERATION_ATTEMPTS) -> str:
-        """安全地生成表达式，带重试机制"""
-        for attempt in range(max_attempts):
-            try:
-                result = generator_func()
-                if result:
-                    return result
-            except Exception:
-                continue
-        
-        # 如果所有尝试都失败，返回默认表达式
-        return Constants.DEFAULT_PROBLEM
     
     def generate_expression(self, num_count: int = 2, 
                            has_multiply: bool = False, 
@@ -467,13 +403,13 @@ class MathEngine:
             a = b * quotient
             temp_result = quotient
         
-        # 生成第二个运算
+        # 生成第二个运算（加减法部分应用整十数字控制）
         if op2 == '+':
             max_c = min(self.max_number, self.max_result - temp_result)
-            c = self._generate_safe_random(self.min_number, max_c)
+            c = self._generate_random_with_round_tens_control(self.min_number, max_c, self.reduce_round_tens)
         else:  # '-'
             max_c = min(self.max_number, temp_result - self.min_result)
-            c = self._generate_safe_random(self.min_number, max_c)
+            c = self._generate_random_with_round_tens_control(self.min_number, max_c, self.reduce_round_tens)
         
         return a, b, c
     
@@ -490,30 +426,31 @@ class MathEngine:
             b = c * quotient
             temp_result = quotient
         
-        # 生成第一个运算（加减法）
+        # 生成第一个运算（加减法部分应用整十数字控制）
         if op1 == '+':
             max_a = min(self.max_number, self.max_result - temp_result)
-            a = self._generate_safe_random(self.min_number, max_a)
+            a = self._generate_random_with_round_tens_control(self.min_number, max_a, self.reduce_round_tens)
         else:  # '-'
             min_a = max(self.min_number, temp_result + self.min_result)
-            a = self._generate_safe_random(min_a, self.max_number)
+            a = self._generate_random_with_round_tens_control(min_a, self.max_number, self.reduce_round_tens)
         
         return a, b, c
     
     def _generate_for_add_sub_only(self, op1: str, op2: str) -> tuple[int, int, int]:
         """处理纯加减法的情况"""
+        rt = self.reduce_round_tens
         # 根据运算符生成三个数，确保中间结果和最终结果都为正
         if op1 == '+' and op2 == '+':
             # a + b + c
-            a = self._generate_safe_random(self.min_number, min(self.max_number, self.max_result // 3))
-            b = self._generate_safe_random(self.min_number, min(self.max_number, (self.max_result - a) // 2))
-            c = self._generate_safe_random(self.min_number, min(self.max_number, self.max_result - a - b))
+            a = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result // 3), rt)
+            b = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, (self.max_result - a) // 2), rt)
+            c = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result - a - b), rt)
             
         elif op1 == '+' and op2 == '-':
             # a + b - c (确保 a + b > c)
-            c = self._generate_safe_random(self.min_number, min(self.max_number, self.max_result - self.min_result))
-            temp_sum = self._generate_safe_random(c + self.min_result, min(self.max_result + c, self.max_number * 2))
-            a = self._generate_safe_random(self.min_number, min(self.max_number, temp_sum - self.min_number))
+            c = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, self.max_result - self.min_result), rt)
+            temp_sum = self._generate_random_with_round_tens_control(c + self.min_result, min(self.max_result + c, self.max_number * 2), rt)
+            a = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, temp_sum - self.min_number), rt)
             b = temp_sum - a
             if b > self.max_number:
                 b = self.max_number
@@ -521,27 +458,27 @@ class MathEngine:
                 
         elif op1 == '-' and op2 == '+':
             # a - b + c (确保 a > b)
-            b = self._generate_safe_random(self.min_number, self.max_number)
-            c = self._generate_safe_random(self.min_number, self.max_number)
+            b = self._generate_random_with_round_tens_control(self.min_number, self.max_number, rt)
+            c = self._generate_random_with_round_tens_control(self.min_number, self.max_number, rt)
             min_a = max(self.min_number, b + self.min_result - c if c < self.min_result else b + 1)
-            a = self._generate_safe_random(min_a, self.max_number)
+            a = self._generate_random_with_round_tens_control(min_a, self.max_number, rt)
             
         else:  # '-' and '-'
             # a - b - c (确保 a > b + c)
             max_bc = self.max_number - self.min_result
             if max_bc < self.min_number * 2:
-                total_sub = self._generate_safe_random(self.min_number * 2, min(self.max_number * 2, self.max_result))
+                total_sub = self._generate_random_with_round_tens_control(self.min_number * 2, min(self.max_number * 2, self.max_result), rt)
             else:
-                total_sub = self._generate_safe_random(self.min_number * 2, max_bc)
+                total_sub = self._generate_random_with_round_tens_control(self.min_number * 2, max_bc, rt)
             
-            b = self._generate_safe_random(self.min_number, min(self.max_number, total_sub - self.min_number))
+            b = self._generate_random_with_round_tens_control(self.min_number, min(self.max_number, total_sub - self.min_number), rt)
             c = total_sub - b
             if c < self.min_number or c > self.max_number:
                 c = self.max_number
                 b = total_sub - c
             
             min_a = total_sub + self.min_result
-            a = self._generate_safe_random(min_a, self.max_number)
+            a = self._generate_random_with_round_tens_control(min_a, self.max_number, rt)
         
         return a, b, c
     

@@ -38,10 +38,6 @@ class Constants:
     DEFAULT_MIN_RESULT: Final[int] = 1
     DEFAULT_MAX_RESULT: Final[int] = 999
     
-    # 兼容性常量（保持向后兼容）
-    MAX_RESULT: Final[int] = MAX_RANGE_VALUE
-    MIN_RESULT: Final[int] = MIN_RANGE_VALUE
-    
     # ==================== 页面布局配置 ====================
     # 默认页面设置
     DEFAULT_ROWS_PER_PAGE: Final[int] = 25
@@ -58,15 +54,6 @@ class Constants:
     MAX_TOTAL_PAGES: Final[int] = 100
     MIN_FONT_SIZE: Final[int] = 12
     MAX_FONT_SIZE: Final[int] = 24
-    
-    # 兼容性常量（保持向后兼容）
-    DEFAULT_PAGES: Final[int] = DEFAULT_TOTAL_PAGES
-    DEFAULT_COLS: Final[int] = DEFAULT_COLS_PER_PAGE
-    DEFAULT_PER_COL: Final[int] = DEFAULT_ROWS_PER_PAGE
-    MAX_PAGES: Final[int] = MAX_TOTAL_PAGES
-    MAX_COLS: Final[int] = MAX_COLS_PER_PAGE
-    MIN_PER_COL: Final[int] = MIN_ROWS_PER_PAGE
-    MAX_PER_COL: Final[int] = MAX_ROWS_PER_PAGE
     
     # ==================== 文件处理配置 ====================
     DEFAULT_SAVE_PATH: Final[str] = "数学题.pdf"

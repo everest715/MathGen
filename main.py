@@ -74,27 +74,36 @@ class MathProblemGenerator:
     def _validate_settings(self, settings: Dict) -> tuple:
         """验证用户设置"""
         try:
-            # 验证数字范围
-            min_number = int(settings['min_number'])
-            max_number = int(settings['max_number'])
+            # 验证数字和结果范围
+            for field, label in [('min_number', '最小数字'), ('max_number', '最大数字'),
+                                 ('min_result', '最小结果'), ('max_result', '最大结果')]:
+                value = int(settings[field])
+                if not (Constants.MIN_RANGE_VALUE <= value <= Constants.MAX_RANGE_VALUE):
+                    return False, f"{label}必须在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间"
             
-            if not (Constants.MIN_RANGE_VALUE <= min_number <= Constants.MAX_RANGE_VALUE):
-                return False, f"最小数字必须在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间"
-            if not (Constants.MIN_RANGE_VALUE <= max_number <= Constants.MAX_RANGE_VALUE):
-                return False, f"最大数字必须在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间"
+            # 验证页面参数范围
+            page_validations = [
+                ('rows_per_page', '每页行数', Constants.MIN_ROWS_PER_PAGE, Constants.MAX_ROWS_PER_PAGE),
+                ('cols_per_page', '每页列数', Constants.MIN_COLS_PER_PAGE, Constants.MAX_COLS_PER_PAGE),
+                ('total_pages', '总页数', Constants.MIN_TOTAL_PAGES, Constants.MAX_TOTAL_PAGES),
+                ('font_size', '字体大小', Constants.MIN_FONT_SIZE, Constants.MAX_FONT_SIZE),
+            ]
+            for field, label, min_val, max_val in page_validations:
+                value = int(settings[field])
+                if not (min_val <= value <= max_val):
+                    return False, f"{label}必须在{min_val}-{max_val}之间"
             
-            # 验证结果范围
-            min_result = int(settings['min_result'])
-            max_result = int(settings['max_result'])
-            
-            if not (Constants.MIN_RANGE_VALUE <= min_result <= Constants.MAX_RANGE_VALUE):
-                return False, f"最小结果必须在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间"
-            if not (Constants.MIN_RANGE_VALUE <= max_result <= Constants.MAX_RANGE_VALUE):
-                return False, f"最大结果必须在{Constants.MIN_RANGE_VALUE}-{Constants.MAX_RANGE_VALUE}之间"
+            # 验证总题数上限
+            total = (int(settings['rows_per_page']) * 
+                     int(settings['cols_per_page']) * 
+                     int(settings['total_pages']))
+            if total > Constants.MAX_TOTAL_PROBLEMS:
+                return False, f"总题数不能超过{Constants.MAX_TOTAL_PROBLEMS}题（当前{total}题）"
             
             # 更新数学引擎范围
             self.math_engine.update_ranges(
-                min_number, max_number, min_result, max_result,
+                int(settings['min_number']), int(settings['max_number']),
+                int(settings['min_result']), int(settings['max_result']),
                 settings['allow_left_bracket'],
                 settings['allow_right_bracket'],
                 settings['reduce_round_tens']
@@ -139,38 +148,36 @@ class MathProblemGenerator:
         if not available_ops:
             return []
         
+        # 2数运算专用方法映射
+        two_num_methods = {
+            'addition': self.math_engine._generate_addition_expression,
+            'subtraction': self.math_engine._generate_subtraction_expression,
+            'multiplication': self.math_engine._generate_multiplication_expression,
+            'division': self.math_engine._generate_division_expression,
+        }
+        
+        num_count = operations['num_count']
+        
         # 生成题目
         problems = []
         for _ in range(total_problems):
             op_type = random.choice(available_ops)
             
-            if operations['has_mixed']:
+            if op_type == 'mixed':
+                # 混合运算：3个数，包含乘除
                 problem = self.math_engine.generate_expression(
-                    num_count=3,
-                    has_multiply=True,
-                    has_divide=True
+                    num_count=3, has_multiply=True, has_divide=True
                 )
-            elif op_type == 'multiplication':
-                problem = self.math_engine._generate_multiplication_expression()
-            elif op_type == 'division':
-                problem = self.math_engine._generate_division_expression()
-            elif operations['num_count'] == 3:
+            elif num_count == 2:
+                # 2数运算：直接调用对应方法
+                method = two_num_methods.get(op_type)
+                problem = method() if method else Constants.DEFAULT_PROBLEM
+            else:
+                # 3数运算：通过 generate_expression 统一分发
                 has_mul = op_type in ['multiplication', 'mixed']
                 has_div = op_type in ['division', 'mixed']
                 problem = self.math_engine.generate_expression(
-                    num_count=3,
-                    has_multiply=has_mul,
-                    has_divide=has_div
-                )
-            elif op_type == 'addition':
-                problem = self.math_engine._generate_addition_expression()
-            elif op_type == 'subtraction':
-                problem = self.math_engine._generate_subtraction_expression()
-            else:
-                problem = self.math_engine.generate_expression(
-                    num_count=operations['num_count'],
-                    has_multiply=op_type in ['multiplication', 'mixed'],
-                    has_divide=op_type in ['division', 'mixed']
+                    num_count=3, has_multiply=has_mul, has_divide=has_div
                 )
             
             problems.append(problem)
