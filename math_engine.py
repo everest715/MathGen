@@ -431,10 +431,8 @@ class MathEngine:
 
     def generate_clever_expression(self, clever_type: str) -> str:
         """生成巧算表达式"""
-        if clever_type == '凑整加法':
-            return self._generate_clever_addition()
-        elif clever_type == '凑整减法':
-            return self._generate_clever_subtraction()
+        if clever_type == '凑整加减法':
+            return random.choice([self._generate_clever_addition, self._generate_clever_subtraction])()
         elif clever_type == '乘法交换律':
             return self._generate_clever_multiplication()
         return Constants.DEFAULT_PROBLEM
@@ -468,6 +466,15 @@ class MathEngine:
 
         b = self._generate_safe_random(min_b, max_b)
         result = target + b
+
+        # 确保前两数相加不为整十数且必须进位
+        valid_arrangements = [
+            (x, b, y) for x, y in [(a, c), (c, a)]
+            if (x + b) % 10 != 0 and (x % 10) + (b % 10) >= 10
+        ]
+        if not valid_arrangements:
+            return self._generate_clever_addition()
+        a, b, c = random.choice(valid_arrangements)
 
         # 选择括号位置
         available_positions = [2]  # 默认无括号
@@ -511,6 +518,15 @@ class MathEngine:
             a = self._generate_safe_random(min_a, max_a)
             result = a - target
 
+            # 确保前两数相减不为整十数且必须退位
+            valid_arrangements = [
+                (a, x, y) for x, y in [(b, c), (c, b)]
+                if (a - x) % 10 != 0 and (a % 10) < (x % 10)
+            ]
+            if not valid_arrangements:
+                return self._generate_clever_subtraction()
+            a, b, c = random.choice(valid_arrangements)
+
         else:
             # a - c 凑整十/百
             if random.random() < 0.5:
@@ -535,6 +551,10 @@ class MathEngine:
 
             b = self._generate_safe_random(min_b, max_b)
             result = target - b
+
+            # 确保前两数相减不为整十数且必须退位
+            if (a - b) % 10 == 0 or (a % 10) >= (b % 10):
+                return self._generate_clever_subtraction()
 
         # 选择括号位置
         available_positions = [2]

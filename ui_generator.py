@@ -64,7 +64,7 @@ class UIGenerator:
         self.save_path = tk.StringVar(value=Constants.DEFAULT_SAVE_PATH)
 
         # === 巧算页变量 ===
-        self.clever_type = tk.StringVar(value='凑整加法')
+        self.clever_type = tk.StringVar(value='凑整加减法')
 
         self.clever_min_number = tk.StringVar(value=str(Constants.DEFAULT_MIN_NUMBER))
         self.clever_max_number = tk.StringVar(value=str(Constants.DEFAULT_MAX_NUMBER))
@@ -205,7 +205,7 @@ class UIGenerator:
         type_frame = ttk.LabelFrame(parent, text="巧算类型", padding="5")
         type_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        clever_types = ['凑整加法', '凑整减法', '乘法交换律']
+        clever_types = ['凑整加减法', '乘法交换律']
         for i, ct in enumerate(clever_types):
             ttk.Radiobutton(type_frame, text=ct, variable=self.clever_type, value=ct).grid(row=0, column=i, sticky=tk.W, padx=(0, 20))
 
