@@ -206,19 +206,20 @@ class MathEngine:
     
     def _generate_multiplication_expression(self) -> str:
         """生成乘法表达式"""
-        a = self._generate_safe_random(max(2, self.min_number), self.max_number)
+        rt = self.reduce_round_tens
+        a = self._generate_random_with_round_tens_control(max(2, self.min_number), self.max_number, rt)
         
         max_b = min(self.max_number, self.max_result // a if a > 0 else self.max_number)
-        b = self._generate_safe_random(max(2, self.min_number), max_b)
+        b = self._generate_random_with_round_tens_control(max(2, self.min_number), max_b, rt)
         result = a * b
         
         if not self._is_valid_expression_result(result):
-            a = self._generate_safe_random(2, min(5, self.max_number))
+            a = self._generate_random_with_round_tens_control(2, min(5, self.max_number), rt)
             max_b_for_result = min(
                 self.max_result // a if a > 0 else self.max_number,
                 self.max_number
             )
-            b = self._generate_safe_random(2, max_b_for_result)
+            b = self._generate_random_with_round_tens_control(2, max_b_for_result, rt)
             result = a * b
             
         return self._generate_bracket_expression(a, 'x', b, result)
@@ -425,3 +426,176 @@ class MathEngine:
         else:
             result = a + b if op1 == '+' else a - b
             return result + c if op2 == '+' else result - c
+
+    # ==================== 巧算方法 ====================
+
+    def generate_clever_expression(self, clever_type: str) -> str:
+        """生成巧算表达式"""
+        if clever_type == '凑整加法':
+            return self._generate_clever_addition()
+        elif clever_type == '凑整减法':
+            return self._generate_clever_subtraction()
+        elif clever_type == '乘法交换律':
+            return self._generate_clever_multiplication()
+        return Constants.DEFAULT_PROBLEM
+
+    def _generate_clever_addition(self) -> str:
+        """生成凑整加法：a + b + c，其中 a + c 凑整十/百"""
+        # 随机选择凑整目标：整十或整百
+        if random.random() < 0.5:
+            # 凑整十
+            target = random.randint(self.min_number // 10 + 1, self.max_number // 10) * 10
+        else:
+            # 凑整百
+            target = random.randint(self.min_number // 100 + 1, self.max_number // 100) * 100
+
+        # a 的个位不能为 0
+        a = self._generate_safe_random(max(self.min_number, target - self.max_number), min(self.max_number, target - self.min_number))
+        if a % 10 == 0:
+            a = a + 1 if a < self.max_number else a - 1
+        c = target - a
+
+        if not (self.min_number <= c <= self.max_number):
+            # 范围不合法，重试
+            return self._generate_clever_addition()
+
+        # b 为中间数，确保总和在结果范围内
+        min_b = max(self.min_number, self.min_result - target)
+        max_b = min(self.max_number, self.max_result - target)
+
+        if min_b > max_b:
+            return self._generate_clever_addition()
+
+        b = self._generate_safe_random(min_b, max_b)
+        result = target + b
+
+        # 选择括号位置
+        available_positions = [2]  # 默认无括号
+        if self.allow_left_bracket:
+            available_positions.extend([0, 1])
+        pos = random.choice(available_positions)
+
+        if pos == 0:
+            return f'(     ) + {b} + {c} = {result}'
+        elif pos == 1:
+            return f'{a} + {b} + (     ) = {result}'
+        else:
+            return f'{a} + {b} + {c} ='
+
+    def _generate_clever_subtraction(self) -> str:
+        """生成凑整减法：a - b - c，其中 b+c 凑整 或 a-c 凑整"""
+        mode = random.choice(['b_plus_c', 'a_minus_c'])
+
+        if mode == 'b_plus_c':
+            # b + c 凑整十/百
+            if random.random() < 0.5:
+                target = random.randint(self.min_number // 10 + 1, self.max_number // 10) * 10
+            else:
+                target = random.randint(self.min_number // 100 + 1, self.max_number // 100) * 100
+
+            b = self._generate_safe_random(self.min_number, min(self.max_number, target - self.min_number))
+            if b % 10 == 0:
+                b = b + 1 if b < self.max_number else b - 1
+            c = target - b
+
+            if not (self.min_number <= c <= self.max_number):
+                return self._generate_clever_subtraction()
+
+            # a 确保结果为正且在结果范围内
+            min_a = max(self.min_number, target + self.min_result)
+            max_a = min(self.max_number, target + self.max_result)
+
+            if min_a > max_a:
+                return self._generate_clever_subtraction()
+
+            a = self._generate_safe_random(min_a, max_a)
+            result = a - target
+
+        else:
+            # a - c 凑整十/百
+            if random.random() < 0.5:
+                target = random.randint(self.min_number // 10 + 1, self.max_number // 10) * 10
+            else:
+                target = random.randint(self.min_number // 100 + 1, self.max_number // 100) * 100
+
+            c = self._generate_safe_random(self.min_number, min(self.max_number, target - self.min_number))
+            if c % 10 == 0:
+                c = c + 1 if c < self.max_number else c - 1
+            a = target + c
+
+            if not (self.min_number <= a <= self.max_number):
+                return self._generate_clever_subtraction()
+
+            # b 确保结果为正且在结果范围内
+            min_b = self.min_number
+            max_b = min(self.max_number, target - self.min_result)
+
+            if min_b > max_b:
+                return self._generate_clever_subtraction()
+
+            b = self._generate_safe_random(min_b, max_b)
+            result = target - b
+
+        # 选择括号位置
+        available_positions = [2]
+        if self.allow_left_bracket:
+            available_positions.extend([0, 1])
+        pos = random.choice(available_positions)
+
+        if pos == 0:
+            return f'(     ) - {b} - {c} = {result}'
+        elif pos == 1:
+            return f'{a} - (     ) - {c} = {result}'
+        else:
+            return f'{a} - {b} - {c} ='
+
+    def _generate_clever_multiplication(self) -> str:
+        """生成乘法交换律：a x b x c，其中一对乘数凑整"""
+        # 随机生成 a（2-9，排除整十数）
+        a = self._generate_safe_random(2, 9)
+
+        # 找到 b 使得 a * b = 整十或整百，且 a 和 b 都不是整十数
+        targets = []
+        for t in range(10, self.max_result + 1, 10):
+            if t % a == 0:
+                b = t // a
+                if 2 <= b <= self.max_number and b % 10 != 0:
+                    targets.append((b, t))
+
+        if not targets:
+            return self._generate_clever_multiplication()
+
+        b, pair_product = random.choice(targets)
+
+        # c 为随意数，确保总结果在结果范围内
+        max_c = min(self.max_number, self.max_result // pair_product) if pair_product > 0 else self.max_number
+        min_c = max(self.min_number, self.min_result // pair_product) if pair_product > 0 else self.min_number
+
+        if min_c > max_c:
+            return self._generate_clever_multiplication()
+
+        c = self._generate_safe_random(min_c, max_c)
+        result = pair_product * c
+
+        # 确保前两个数相乘结果不为整十数，避免凑整对出现在前两位
+        valid_arrangements = [
+            arr for arr in [
+                [a, b, c], [a, c, b], [b, a, c], [b, c, a], [c, a, b], [c, b, a]
+            ] if arr[0] * arr[1] % 10 != 0
+        ]
+        if not valid_arrangements:
+            return self._generate_clever_multiplication()
+        nums = random.choice(valid_arrangements)
+
+        # 选择括号位置
+        available_positions = [2]
+        if self.allow_left_bracket:
+            available_positions.extend([0, 1])
+        pos = random.choice(available_positions)
+
+        if pos == 0:
+            return f'(     ) x {nums[1]} x {nums[2]} = {result}'
+        elif pos == 1:
+            return f'{nums[0]} x (     ) x {nums[2]} = {result}'
+        else:
+            return f'{nums[0]} x {nums[1]} x {nums[2]} ='
